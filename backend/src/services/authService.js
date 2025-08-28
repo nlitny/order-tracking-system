@@ -1,6 +1,7 @@
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../../../.env') });
 const { PrismaClient } = require('@prisma/client');
+const { cloudinary } = require('../config/cloudinary');
 const bcrypt = require('bcrypt');
 
 const {
@@ -80,6 +81,103 @@ const updateUserProfile = async (userId, updateData) => {
     }
   });
 };
+const updateProfilePicture = async (userId, profilePictureData) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        profilePictureId: true,
+        profilePicture: true
+      }
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    if (user.profilePictureId) {
+      try {
+        await cloudinary.uploader.destroy(user.profilePictureId);
+        console.log(`Old profile picture deleted: ${user.profilePictureId}`);
+      } catch (error) {
+        console.error('Error deleting old profile picture:', error);
+      }
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        profilePicture: profilePictureData.path,
+        profilePictureId: profilePictureData.public_id
+      },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        role: true,
+        isActive: true,
+        profilePicture: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+
+    return updatedUser;
+  } catch (error) {
+    if (profilePictureData.public_id) {
+      try {
+        await cloudinary.uploader.destroy(profilePictureData.public_id);
+      } catch (cleanupError) {
+        console.error('Error cleaning up uploaded file:', cleanupError);
+      }
+    }
+    throw error;
+  }
+};
+
+const removeProfilePicture = async (userId) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        profilePictureId: true
+      }
+    });
+
+    if (!user || !user.profilePictureId) {
+      throw new Error('No profile picture to remove');
+    }
+
+    await cloudinary.uploader.destroy(user.profilePictureId);
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        profilePicture: null,
+        profilePictureId: null
+      },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        role: true,
+        isActive: true,
+        profilePicture: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+
+    return updatedUser;
+  } catch (error) {
+    throw error;
+  }
+};
 
 const updatePassword = async (userId, newPassword) => {
   const hashedPassword = await bcrypt.hash(newPassword, 12);
@@ -146,6 +244,8 @@ module.exports = {
   getUserWithPassword, 
   createUser,
   updateUserProfile,
+  updateProfilePicture,
+  removeProfilePicture,
   updatePassword,
   generateAuthTokens,
   sanitizeUser,
