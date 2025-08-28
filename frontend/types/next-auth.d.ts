@@ -1,52 +1,47 @@
-import "next-auth";
-import { JWT } from "next-auth/jwt";
+// types/next-auth.d.ts
+import NextAuth from "next-auth";
 
 declare module "next-auth" {
   interface Session {
-    user?: {
-      _id: string;
+    user: {
+      id: string;
       email: string;
-      roles: string[];
+      firstName: string;
+      lastName: string;
+      role: string;
+      isActive: boolean;
       accessToken: string;
-      permission: AdminPermission[];
       refreshToken: string;
     };
     error?: string;
-    requiresTwoStep?: boolean;
-    message?: string;
-    twoStepToken?: string;
   }
-
 
   interface User {
     id: string;
-    _id: string;
     email: string;
-    roles: string[];
+    firstName: string;
+    lastName: string;
+    role: string;
+    isActive: boolean;
     accessToken: string;
     refreshToken: string;
     accessTokenExpires: number;
     refreshTokenExpires: number;
-    permission: AdminPermission[];
-    requiresTwoStep?: boolean;
-    message?: string;
-    twoStepToken?: string;
   }
 }
 
 declare module "next-auth/jwt" {
   interface JWT {
-    _id?: string;
-    email?: string;
-    roles?: string[];
-    accessToken?: string;
-    refreshToken?: string;
-    accessTokenExpires?: number;
-    refreshTokenExpires?: number;
-    permission?: AdminPermission[];
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+    isActive: boolean;
+    accessToken: string;
+    refreshToken: string;
+    accessTokenExpires: number;
+    refreshTokenExpires: number;
     error?: string;
-    requiresTwoStep?: boolean;
-    message?: string;
-    twoStepToken?: string;
   }
 }

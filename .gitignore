@@ -31,3 +31,7 @@ dist/
 build/
 /src/generated/prisma
 
+/frontend/.next
+/frontend/node_modules
+/frontend/out
+
