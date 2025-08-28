@@ -1,3 +1,4 @@
+// AuthForm.tsx (بخش های مهم که باید تغییر کند)
 "use client";
 
 import React, { useState, useCallback, useMemo } from "react";
@@ -20,32 +21,29 @@ import LoginForm from "./LoginForm";
 import RegisterForm from "./RegisterForm";
 import { AuthFormData, AuthStep, ValidationErrors } from "../utils/types";
 import { validateForm } from "../utils/validation";
-import { axiosInstance } from "../utils/api";
 import { brandColors } from "@/theme/theme";
 import { useToast } from "@/lib/toast/toast";
+import { useAuth } from "@/hooks/useAuth"; // اضافه شد
+import axiosInstance from "@/lib/axios/csrAxios";
 
-interface AuthFormProps {
-  formData: AuthFormData;
-  updateFormData: (updates: Partial<AuthFormData>) => void;
-  currentStep: AuthStep;
-  goToStep: (step: AuthStep) => void;
-  resetToEmail: () => void;
-}
 
-const AuthForm: React.FC<AuthFormProps> = ({
-  formData,
-  updateFormData,
-  currentStep,
-  goToStep,
-  resetToEmail,
-}) => {
+const AuthForm: React.FC = () => {
   const theme = useTheme();
   const isSmall = useMediaQuery(theme.breakpoints.down("sm"));
   const { showToast, showSuccessToast, showErrorToast, showInfoToast } =
     useToast();
 
-  const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<ValidationErrors>({});
+  // استفاده از custom hook
+  const {
+    authState,
+    formData,
+    updateFormData,
+    setErrors,
+    goToStep,
+    resetToEmail,
+    setLoading,
+    completeAuthWithNextAuth,
+  } = useAuth();
 
   // Step configuration
   const stepConfig = useMemo(() => {
@@ -54,17 +52,17 @@ const AuthForm: React.FC<AuthFormProps> = ({
       login: { buttonText: "Sign In" },
       register: { buttonText: "Create Account" },
     };
-    return configs[currentStep] || configs.email;
-  }, [currentStep]);
+    return configs[authState.step] || configs.email;
+  }, [authState.step]);
 
-  // Form submission handler
+  // Form submission handler - تغییر یافته
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
       // Validate form data
-      const validationErrors = validateForm(formData, currentStep);
+      const validationErrors = validateForm(formData, authState.step);
       if (Object.keys(validationErrors).length > 0) {
         setErrors(validationErrors);
         showErrorToast("Please fix the errors in the form");
@@ -73,34 +71,40 @@ const AuthForm: React.FC<AuthFormProps> = ({
 
       setErrors({});
 
-      let submitData: any = { email: formData.email };
+      if (authState.step === "email") {
+        // مرحله اول - ارسال ایمیل
+        const submitData = { email: formData.email };
+        const response = await axiosInstance.post(
+          "/auth/authlogin",
+          submitData
+        );
+        const { status, message } = response.data.data;
 
-      if (currentStep === "login") {
-        submitData.password = formData.password;
-      } else if (currentStep === "register") {
-        submitData = {
+        if (status === "login") {
+          goToStep("login");
+          showInfoToast(message || "Please enter your password");
+        } else if (status === "pending") {
+          goToStep("register");
+          showInfoToast(message || "Please complete your registration");
+        }
+      } else if (authState.step === "login" || authState.step === "register") {
+        // مرحله نهایی - استفاده از NextAuth
+        const authData: any = {
           email: formData.email,
           password: formData.password,
-          first_name: formData.first_name?.trim(),
-          last_name: formData.last_name?.trim(),
         };
-      }
 
-      const response = await axiosInstance.post("/auth", submitData);
-      const { status, message, user } = response.data;
-      if (status === "login") {
-        goToStep("login");
-        showInfoToast(message);
-      } else if (status === "register") {
-        goToStep("register");
-        showInfoToast(message);
-      } else if (status === "success") {
-        showSuccessToast(message);
-        console.log("User data:", user);
+        if (authState.step === "register") {
+          authData.firstName = formData.first_name?.trim();
+          authData.lastName = formData.last_name?.trim();
+          authData.rePassword = formData.re_password;
+        }
 
-        setTimeout(() => {
-          window.location.href = "/dashboard";
-        }, 2000);
+        const success = await completeAuthWithNextAuth(authData);
+
+        if (success) {
+          showSuccessToast("Authentication successful!");
+        }
       }
     } catch (error: any) {
       const errorMessage =
@@ -116,11 +120,11 @@ const AuthForm: React.FC<AuthFormProps> = ({
       (event: React.ChangeEvent<HTMLInputElement>) => {
         const value = event.target.value;
         updateFormData({ [field]: value });
-        if (errors[field]) {
-          setErrors((prev) => ({ ...prev, [field]: undefined }));
+        if (authState.errors[field]) {
+          setErrors({ ...authState.errors, [field]: undefined });
         }
       },
-    [updateFormData, errors]
+    [updateFormData, authState.errors, setErrors]
   );
 
   return (
@@ -140,15 +144,16 @@ const AuthForm: React.FC<AuthFormProps> = ({
       }}
     >
       <Box sx={{ mb: { xs: 3, md: 4 } }}>
-        <ProgressStepper currentStep={currentStep} isSmall={isSmall} />
+        <ProgressStepper currentStep={authState.step} isSmall={isSmall} />
       </Box>
-      {currentStep !== "email" && (
+
+      {authState.step !== "email" && (
         <Slide direction="right" in={true} timeout={300}>
           <Box sx={{ mb: 3 }}>
             <Button
               startIcon={<ArrowBack />}
               onClick={resetToEmail}
-              disabled={loading}
+              disabled={authState.loading}
               sx={{
                 color: theme.palette.text.secondary,
                 textTransform: "none",
@@ -179,30 +184,30 @@ const AuthForm: React.FC<AuthFormProps> = ({
               <EmailField
                 value={formData.email}
                 onChange={handleInputChange("email")}
-                error={errors.email}
-                disabled={currentStep !== "email"}
-                step={currentStep}
-                loading={loading}
+                error={authState.errors.email}
+                disabled={authState.step !== "email"}
+                step={authState.step}
+                loading={authState.loading}
               />
             </Box>
           </Slide>
 
           {/* Login Form */}
-          {currentStep === "login" && (
+          {authState.step === "login" && (
             <Slide direction="up" in={true} timeout={500}>
               <Box>
                 <LoginForm
                   password={formData.password || ""}
                   onPasswordChange={handleInputChange("password")}
-                  passwordError={errors.password}
-                  loading={loading}
+                  passwordError={authState.errors.password}
+                  loading={authState.loading}
                 />
               </Box>
             </Slide>
           )}
 
           {/* Register Form */}
-          {currentStep === "register" && (
+          {authState.step === "register" && (
             <Slide direction="up" in={true} timeout={500}>
               <Box>
                 <RegisterForm
@@ -214,8 +219,8 @@ const AuthForm: React.FC<AuthFormProps> = ({
                   onLastNameChange={handleInputChange("last_name")}
                   onPasswordChange={handleInputChange("password")}
                   onRePasswordChange={handleInputChange("re_password")}
-                  errors={errors}
-                  loading={loading}
+                  errors={authState.errors}
+                  loading={authState.loading}
                 />
               </Box>
             </Slide>
@@ -228,9 +233,9 @@ const AuthForm: React.FC<AuthFormProps> = ({
               fullWidth
               variant="contained"
               size="large"
-              disabled={loading}
+              disabled={authState.loading}
               endIcon={
-                loading ? (
+                authState.loading ? (
                   <CircularProgress size={20} color="inherit" sx={{ ml: 1 }} />
                 ) : null
               }
@@ -287,8 +292,8 @@ const AuthForm: React.FC<AuthFormProps> = ({
                 transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
               }}
             >
-              {!loading && stepConfig.buttonText}
-              {loading && (
+              {!authState.loading && stepConfig.buttonText}
+              {authState.loading && (
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                   Processing...
                 </Box>

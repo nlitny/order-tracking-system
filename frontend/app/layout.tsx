@@ -6,6 +6,8 @@ import CssBaseline from "@mui/material/CssBaseline";
 import { theme } from "../theme/theme";
 import "./globals.css";
 import { ToastProvider } from "@/lib/toast/toast";
+import AuthProvider from "@/components/AuthProvider";
+import { UserProvider } from "@/context/UserContext";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -213,21 +215,25 @@ export default function RootLayout({
         />
       </head>
       <body className={`${poppins.className} antialiased`}>
-        <AppRouterCacheProvider>
-          <ThemeProvider theme={theme}>
-            <CssBaseline />
-            <ToastProvider
-              defaultOptions={{
-                duration: 5000,
-                position: "top-right",
-                variant: "glass",
-                showProgressBar: true,
-              }}
-            >
-              {children}
-            </ToastProvider>
-          </ThemeProvider>
-        </AppRouterCacheProvider>
+        <AuthProvider>
+          <UserProvider>
+            <AppRouterCacheProvider>
+              <ThemeProvider theme={theme}>
+                <CssBaseline />
+                <ToastProvider
+                  defaultOptions={{
+                    duration: 5000,
+                    position: "top-right",
+                    variant: "glass",
+                    showProgressBar: true,
+                  }}
+                >
+                  {children}
+                </ToastProvider>
+              </ThemeProvider>
+            </AppRouterCacheProvider>
+          </UserProvider>
+        </AuthProvider>
       </body>
     </html>
   );

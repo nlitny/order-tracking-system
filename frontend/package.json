@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3000 -H 0.0.0.0",
-    "build": "next build",
-    "start": "next start -p 3000 -H 0.0.0.0",
-    "lint": "eslint"
+    "dev": "dotenv -e ../.env -- next dev -p 3000 -H 0.0.0.0",
+    "build": "dotenv -e ../.env -- next build",
+    "start": "dotenv -e ../.env -- next start -p 3000 -H 0.0.0.0",
+    "lint": "dotenv -e ../.env -- eslint"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -34,6 +34,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv-cli": "^10.0.0",
     "eslint": "^9",
     "eslint-config-next": "15.5.0",
     "tailwindcss": "^4.1.12",
