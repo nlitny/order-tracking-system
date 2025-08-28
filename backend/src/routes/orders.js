@@ -1,33 +1,54 @@
-
 const express = require('express');
 const router = express.Router();
+const orderController = require('../controllers/orderController');
+const { validateRequest } = require('../middleware/validation');
+const { createOrderSchema } = require('../validations/orderValidation');
+const { authenticateToken } = require('../middleware/auth');
 
-// @desc    Get all orders
-// @route   GET /api/v1/orders
-// @access  Private
-router.get('/', (req, res) => {
-  res.json({ message: 'Get all orders - Coming Soon' });
-});
+require('../docs/orderDocs');
 
-// @desc    Get single order
-// @route   GET /api/v1/orders/:id
-// @access  Private
-router.get('/:id', (req, res) => {
-  res.json({ message: `Get order ${req.params.id} - Coming Soon` });
-});
+// Apply authentication to all order routes
+router.use(authenticateToken);
 
-// @desc    Create new order
-// @route   POST /api/v1/orders
-// @access  Private
-router.post('/', (req, res) => {
-  res.json({ message: 'Create order - Coming Soon' });
-});
+/**
+ * Get all orders
+ * @desc    Get all orders with pagination and filtering
+ * @route   GET /api/v1/orders
+ * @access  Private
+ */
+router.get('/', authenticateToken,orderController.getOrders);
 
-// @desc    Update order
-// @route   PUT /api/v1/orders/:id
-// @access  Private
-router.put('/:id', (req, res) => {
-  res.json({ message: `Update order ${req.params.id} - Coming Soon` });
-});
+/**
+ * Get single order
+ * @desc    Get single order by ID
+ * @route   GET /api/v1/orders/:id
+ * @access  Private
+ */
+router.get('/:id',authenticateToken,orderController.getOrderById);
+
+/**
+ * Create new order
+ * @desc    Create new order
+ * @route   POST /api/v1/orders/new
+ * @access  Private
+ */
+router.post('/new', validateRequest(createOrderSchema), orderController.createOrder);
+
+/**
+ * Update order
+ * @desc    Update order by ID
+ * @route   patch /api/v1/orders/update/:id
+ * @access  Private
+ */
+router.patch('/update/:id',authenticateToken, orderController.updateOrder);
+
+/**
+ * Cancel order
+ * @desc    Cancel order by ID
+ * @route   patch /api/v1/orders/:id/cancel
+ * @access  Private
+ */
+
+router.patch('/:id/cancel', authenticateToken, orderController.cancelOrder);
 
 module.exports = router;

@@ -11,7 +11,7 @@ const notFoundHandler = require('./src/middleware/notFound');
 
 // Import routes
 const authRoutes = require('./src/routes/auth');
-// const orderRoutes = require('./src/routes/orders');
+const orderRoutes = require('./src/routes/orders');
 // const mediaRoutes = require('./src/routes/media');
 // const userRoutes = require('./src/routes/users');
 
@@ -65,7 +65,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Routes
 app.use('/api/v1/auth', authRoutes);
-// app.use('/api/v1/orders', orderRoutes);
+app.use('/api/v1/orders', orderRoutes);
 // app.use('/api/v1/media', mediaRoutes);
 // app.use('/api/v1/users', userRoutes);
 

@@ -33,24 +33,25 @@ model Order {
   id          String      @id @default(uuid())
   orderNumber String      @unique
   customerId  String
-  title       String
-  description String?
+  title       String 
+  description String
   status      OrderStatus @default(PENDING)
-  priority    Priority    @default(MEDIUM)
   estimatedCompletion DateTime?
+  special_instructions String? 
   completedAt DateTime?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
   customer      User            @relation(fields: [customerId], references: [id])
   mediaFiles    MediaFile[]
+  customermedia CustomerMedia[]
   orderHistory  OrderHistory[]
   notifications Notification[]
 
   @@map("orders")
   @@index([customerId])
+  @@index([description])
   @@index([status])
-  @@index([priority])
   @@index([createdAt])
   @@index([customerId, status])
   @@index([status, createdAt])
@@ -76,6 +77,32 @@ model MediaFile {
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@map("media_files")
+  @@index([orderId])
+  @@index([uploadedBy])
+  @@index([mimeType])
+  @@index([fileType])
+  @@index([isPublic])
+  @@index([createdAt])
+}
+
+model CustomerMedia {
+  id           String      @id @default(uuid())
+  orderId      String
+  fileName     String
+  originalName String
+  mimeType     String
+  size         Int
+  path         String
+  cloudinaryId String?
+  uploadedBy   String
+  fileType     FileType
+  isPublic     Boolean     @default(false)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("customer_media")
   @@index([orderId])
   @@index([uploadedBy])
   @@index([mimeType])
