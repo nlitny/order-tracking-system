@@ -1,6 +1,7 @@
 const authService = require('../services/authService');
 const { successResponse, errorResponse } = require('../utils/responses');
 const { asyncHandler } = require('../utils/asyncHandler');
+const { upload } = require('../config/profilePictureConfig');
 
 const auth = asyncHandler(async (req, res) => {
   const { email, password, firstName, lastName, rePassword } = req.body;
@@ -101,6 +102,46 @@ const getProfile = asyncHandler(async (req, res) => {
   });
 });
 
+const uploadProfilePicture = asyncHandler(async (req, res) => {
+  if (!req.file) {
+    return errorResponse(res, 'No image file provided', 400);
+  }
+
+  const profilePictureData = {
+    path: req.file.path,
+    public_id: req.file.public_id
+  };
+
+  const updatedUser = await authService.updateProfilePicture(
+    req.user.id, 
+    profilePictureData
+  );
+
+  await authService.logUserActivity(req.user.id, 'PROFILE_PICTURE_UPDATED', {
+    email: req.user.email,
+    ip: req.ip,
+    userAgent: req.get('User-Agent')
+  });
+
+  return successResponse(res, 'Profile picture updated successfully', {
+    user: authService.sanitizeUser(updatedUser)
+  });
+});
+
+const removeProfilePicture = asyncHandler(async (req, res) => {
+  const updatedUser = await authService.removeProfilePicture(req.user.id);
+
+  await authService.logUserActivity(req.user.id, 'PROFILE_PICTURE_REMOVED', {
+    email: req.user.email,
+    ip: req.ip,
+    userAgent: req.get('User-Agent')
+  });
+
+  return successResponse(res, 'Profile picture removed successfully', {
+    user: authService.sanitizeUser(updatedUser)
+  });
+});
+
 const updateProfile = asyncHandler(async (req, res) => {
   const { firstName, lastName, phone, email } = req.body;
   
@@ -166,5 +207,7 @@ module.exports = {
   refreshToken,
   getProfile,
   updateProfile,
+  uploadProfilePicture,
+  removeProfilePicture,
   changePassword
 };

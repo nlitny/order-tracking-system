@@ -1,8 +1,8 @@
+
 generator client {
   provider = "prisma-client-js"
   output   = "../node_modules/.prisma/client"
 }
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -15,6 +15,8 @@ model User {
   firstName String
   lastName  String
   phone     String?
+  profilePicture   String?  
+  profilePictureId String?  
   role      UserRole @default(CUSTOMER)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())

@@ -10,11 +10,9 @@ const notFoundHandler = require("./src/middleware/notFound");
 
 // Import routes
 const authRoutes = require("./src/routes/auth");
-// const orderRoutes = require('./src/routes/orders');
-// const mediaRoutes = require('./src/routes/media');
-// const userRoutes = require('./src/routes/users');
+const orderRoutes = require('./src/routes/orders');
+const customerMediaRoutes = require('./src/routes/customerMedia'); // اضافه شده
 
-// Swagger (اختیاری)
 const swaggerUi = require("swagger-ui-express");
 const { swaggerSpec } = require("./src/config/swagger");
 const securityMiddleware = require("./src/middleware/securityMiddleware");
@@ -22,10 +20,10 @@ const app = express();
 
 securityMiddleware(app);
 
-// Rate limiting - فقط general limit
+// Rate limiting
 app.use(generalRateLimit);
 
-// Body parsing
+// Body parsing - افزایش حد برای فایل ها
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
@@ -47,16 +45,13 @@ app.get("/health", (req, res) => {
   });
 });
 
-// Swagger (اختیاری)
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Routes
 app.use("/api/v1/auth", authRoutes);
-// app.use('/api/v1/orders', orderRoutes);
-// app.use('/api/v1/media', mediaRoutes);
-// app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/orders', orderRoutes);
+app.use('/api/v1/orders', customerMediaRoutes); // اضافه شده
 
-// Error handlers - باید در آخر باشن
 app.use(notFoundHandler);
 app.use(errorHandler);
 

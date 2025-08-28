@@ -52,6 +52,11 @@
  *         isActive:
  *           type: boolean
  *           example: true
+ *         profilePicture:
+ *           type: string
+ *           example: "https://res.cloudinary.com/dffnqsjqh/image/upload/v1735486758/profile-pictures/user123.jpg"
+ *           nullable: true
+ *           description: "Cloudinary URL of user's profile picture"
  *         createdAt:
  *           type: string
  *           format: date-time
@@ -575,6 +580,174 @@
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
+ */
+
+/**
+ * @swagger
+ * /api/v1/auth/profile/picture:
+ *   post:
+ *     summary: Upload profile picture
+ *     description: Upload a new profile picture for the authenticated user. Replaces any existing profile picture.
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               profilePicture:
+ *                 type: string
+ *                 format: binary
+ *                 description: Image file for profile picture (JPG, JPEG, PNG, WEBP)
+ *             required: [profilePicture]
+ *           encoding:
+ *             profilePicture:
+ *               contentType: image/*
+ *     responses:
+ *       200:
+ *         description: Profile picture uploaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Profile picture updated successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     user:
+ *                       $ref: '#/components/schemas/User'
+ *             example:
+ *               success: true
+ *               message: "Profile picture updated successfully"
+ *               data:
+ *                 user:
+ *                   id: "clx1234567890"
+ *                   email: "user@example.com"
+ *                   firstName: "John"
+ *                   lastName: "Doe"
+ *                   profilePicture: "https://res.cloudinary.com/dffnqsjqh/image/upload/v1735486758/profile-pictures/user123.jpg"
+ *                   role: "CUSTOMER"
+ *                   isActive: true
+ *                   createdAt: "2024-01-15T10:30:00.000Z"
+ *                   updatedAt: "2024-01-15T12:45:00.000Z"
+ *       400:
+ *         description: Bad request - validation or file error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             examples:
+ *               no_file:
+ *                 summary: No image file provided
+ *                 value:
+ *                   success: false
+ *                   message: "No image file provided"
+ *               invalid_format:
+ *                 summary: Invalid file format
+ *                 value:
+ *                   success: false
+ *                   message: "Only image files are allowed"
+ *               file_too_large:
+ *                 summary: File too large
+ *                 value:
+ *                   success: false
+ *                   message: "File size must be less than 5MB"
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       413:
+ *         description: File too large
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "File size exceeds the maximum limit of 5MB"
+ *       415:
+ *         description: Unsupported media type
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Only image files (JPG, JPEG, PNG, WEBP) are allowed"
+ *   delete:
+ *     summary: Remove profile picture
+ *     description: Remove the current profile picture of the authenticated user
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Profile picture removed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Profile picture removed successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     user:
+ *                       $ref: '#/components/schemas/User'
+ *             example:
+ *               success: true
+ *               message: "Profile picture removed successfully"
+ *               data:
+ *                 user:
+ *                   id: "clx1234567890"
+ *                   email: "user@example.com"
+ *                   firstName: "John"
+ *                   lastName: "Doe"
+ *                   profilePicture: null
+ *                   role: "CUSTOMER"
+ *                   isActive: true
+ *                   createdAt: "2024-01-15T10:30:00.000Z"
+ *                   updatedAt: "2024-01-15T12:45:00.000Z"
+ *       400:
+ *         description: Bad request - No profile picture to remove
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "No profile picture to remove"
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "User not found"
  */
 
 /**

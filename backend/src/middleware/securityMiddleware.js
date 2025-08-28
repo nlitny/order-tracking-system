@@ -1,5 +1,7 @@
 const helmet = require('helmet');
 const cors = require('cors');
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../../../.env') });
 
 const securityMiddleware = (app) => {
   app.use(helmet({

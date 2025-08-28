@@ -1,3 +1,4 @@
+// src/validations/orderValidation.js
 const Joi = require('joi');
 
 const createOrderSchema = Joi.object({
@@ -22,11 +23,13 @@ const createOrderSchema = Joi.object({
       'string.max': 'Description must not exceed 1000 characters'
     }),
 
-  priority: Joi.string()
-    .valid('LOW', 'MEDIUM', 'HIGH', 'URGENT')
-    .default('MEDIUM')
+  special_instructions: Joi.string()
+    .trim()
+    .max(500)
+    .allow('')
+    .optional()
     .messages({
-      'any.only': 'Priority must be one of LOW, MEDIUM, HIGH, URGENT'
+      'string.max': 'Special instructions must not exceed 500 characters'
     }),
 
   estimatedCompletion: Joi.date()

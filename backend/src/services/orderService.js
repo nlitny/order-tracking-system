@@ -101,29 +101,41 @@ class OrderService {
         throw new AppError('Order not found', 404);
       }
 
-      const includeClause = {
-        customer: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true
-          }
-        },
-        orderHistory: {
-          orderBy: {
-            createdAt: 'desc'
-          },
-          take: 10,
-          select: {
-            id: true,
-            status: true,
-            comment: true,
-            createdAt: true,
-            metadata: true
-          }
-        }
-      };
+const includeClause = {
+  customer: {
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true
+    }
+  },
+  customermedia: {
+    select: {
+      id: true,
+      fileName: true,
+      originalName: true,
+      mimeType: true,
+      size: true,
+      fileType: true,
+      path: true,
+      createdAt: true
+    }
+  },
+  orderHistory: {
+    orderBy: {
+      createdAt: 'desc'
+    },
+    take: 10,
+    select: {
+      id: true,
+      status: true,
+      comment: true,
+      createdAt: true,
+      metadata: true
+    }
+  }
+};
 
       if (orderBasic.status === 'COMPLETED') {
         includeClause.mediaFiles = {

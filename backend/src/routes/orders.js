@@ -5,6 +5,7 @@ const { validateRequest } = require('../middleware/validation');
 const { createOrderSchema } = require('../validations/orderValidation');
 const { authenticateToken } = require('../middleware/auth');
 
+// Import swagger documentation
 require('../docs/orderDocs');
 
 // Apply authentication to all order routes
@@ -16,7 +17,15 @@ router.use(authenticateToken);
  * @route   GET /api/v1/orders
  * @access  Private
  */
-router.get('/', authenticateToken,orderController.getOrders);
+router.get('/', orderController.getOrders);
+
+/**
+ * Create new order
+ * @desc    Create new order
+ * @route   POST /api/v1/orders
+ * @access  Private
+ */
+router.post('/', validateRequest(createOrderSchema), orderController.createOrder);
 
 /**
  * Get single order
@@ -24,31 +33,22 @@ router.get('/', authenticateToken,orderController.getOrders);
  * @route   GET /api/v1/orders/:id
  * @access  Private
  */
-router.get('/:id',authenticateToken,orderController.getOrderById);
-
-/**
- * Create new order
- * @desc    Create new order
- * @route   POST /api/v1/orders/new
- * @access  Private
- */
-router.post('/new', validateRequest(createOrderSchema), orderController.createOrder);
+router.get('/:id', orderController.getOrderById);
 
 /**
  * Update order
  * @desc    Update order by ID
- * @route   patch /api/v1/orders/update/:id
+ * @route   PATCH /api/v1/orders/:id
  * @access  Private
  */
-router.patch('/update/:id',authenticateToken, orderController.updateOrder);
+router.patch('/:id', orderController.updateOrder);
 
 /**
  * Cancel order
  * @desc    Cancel order by ID
- * @route   patch /api/v1/orders/:id/cancel
+ * @route   PATCH /api/v1/orders/:id/cancel
  * @access  Private
  */
-
-router.patch('/:id/cancel', authenticateToken, orderController.cancelOrder);
+router.patch('/:id/cancel', orderController.cancelOrder);
 
 module.exports = router;
