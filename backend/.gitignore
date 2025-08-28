@@ -5,3 +5,14 @@ uploads/
 .DS_Store
 dist/
 build/
+/src/generated/prisma
+
+
+# Environment files
+.env
+.env.local
+.env.production
+*.env
+
+# Database
+postgres_password.txt

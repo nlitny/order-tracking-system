@@ -1,0 +1,170 @@
+const authService = require('../services/authService');
+const { successResponse, errorResponse } = require('../utils/responses');
+const { asyncHandler } = require('../utils/asyncHandler');
+
+const auth = asyncHandler(async (req, res) => {
+  const { email, password, firstName, lastName, rePassword } = req.body;
+
+  const existingUser = await authService.checkEmailExists(email);
+
+  if (!existingUser) {
+    if (!firstName || !lastName || !password || !rePassword) {
+      return successResponse(res, 'Please register to complete your account setup', {
+        status: 'pending',
+        message: 'Please provide your registration details',
+        required_fields: ['firstName', 'lastName', 'password', 'rePassword']
+      });
+    } else {
+      if (password !== rePassword) {
+        return errorResponse(res, 'Passwords do not match', 400);
+      }
+
+      const newUser = await authService.createUser({
+        email,
+        firstName,
+        lastName,
+        password
+      });
+
+      const tokens = authService.generateAuthTokens(newUser);
+
+      console.log(`New user registered: ${newUser.email} at ${new Date().toISOString()}`);
+
+      return successResponse(res, 'Registration completed successfully', {
+        status: 'register',
+        user: authService.sanitizeUser(newUser),
+        tokens: {
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
+          accessTokenExpiresIn: tokens.accessTokenExpiresIn,
+          refreshTokenExpiresIn: tokens.refreshTokenExpiresIn
+        }
+      }, 201);
+    }
+  } else {
+    if (!existingUser.isActive) {
+      return errorResponse(res, 'Your account is deactivated', 403);
+    }
+
+    if (!password) {
+      return successResponse(res, 'Please enter your password to continue', {
+        status: 'login',
+        message: 'Password required for login',
+        required_fields: ['password']
+      });
+    } else {
+      const isValidPassword = await authService.verifyPassword(password, existingUser.password);
+      
+      if (!isValidPassword) {
+        return errorResponse(res, 'Invalid password', 401);
+      }
+
+      const tokens = authService.generateAuthTokens(existingUser);
+
+      console.log(`User ${existingUser.email} logged in successfully at ${new Date().toISOString()}`);
+
+      return successResponse(res, 'Login successful', {
+        status: 'login',
+        user: authService.sanitizeUser(existingUser),
+        tokens: {
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
+          accessTokenExpiresIn: tokens.accessTokenExpiresIn,
+          refreshTokenExpiresIn: tokens.refreshTokenExpiresIn
+        }
+      });
+    }
+  }
+});
+
+const logout = asyncHandler(async (req, res) => {
+  console.log(`User ${req.user.email} logged out at ${new Date().toISOString()}`);
+  return successResponse(res, 'Logout successful');
+});
+
+const refreshToken = asyncHandler(async (req, res) => {
+  const tokens = authService.generateAuthTokens(req.user);
+  
+  return successResponse(res, 'Token refreshed successfully', {
+    tokens: {
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      accessTokenExpiresIn: tokens.accessTokenExpiresIn,
+      refreshTokenExpiresIn: tokens.refreshTokenExpiresIn
+    }
+  });
+});
+
+const getProfile = asyncHandler(async (req, res) => {
+  return successResponse(res, 'Profile retrieved successfully', {
+    user: authService.sanitizeUser(req.user)
+  });
+});
+
+const updateProfile = asyncHandler(async (req, res) => {
+  const { firstName, lastName, phone, email } = req.body;
+  
+  if (!firstName && !lastName && !phone && !email) {
+    return errorResponse(res, 'At least one field is required to update', 400);
+  }
+  
+  if (email && email !== req.user.email) {
+    const existingUser = await authService.checkEmailExists(email);
+    if (existingUser) {
+      return errorResponse(res, 'Email already exists', 400);
+    }
+  }
+  
+  const updatedUser = await authService.updateUserProfile(req.user.id, {
+    firstName,
+    lastName, 
+    phone,
+    email
+  });
+  await authService.logUserActivity(req.user.id, 'PROFILE_UPDATED', {
+    email: req.user.email,
+    changes: { firstName, lastName, phone, email },
+    ip: req.ip,
+    userAgent: req.get('User-Agent')
+  });
+
+  return successResponse(res, 'Profile updated successfully', {
+    user: authService.sanitizeUser(updatedUser)
+  });
+});
+
+
+const changePassword = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  
+  if (currentPassword === newPassword) {
+    return errorResponse(res, 'New password must be different from current password', 400);
+  }
+  
+  const userWithPassword = await authService.getUserWithPassword(req.user.id);
+  
+  if (!userWithPassword) {
+    return errorResponse(res, 'User not found', 404);
+  }
+  
+  const isValidPassword = await authService.verifyPassword(currentPassword, userWithPassword.password);
+  
+  if (!isValidPassword) {
+    return errorResponse(res, 'Current password is incorrect', 400);
+  }
+
+  await authService.updatePassword(req.user.id, newPassword);
+
+  console.log(`Password changed for user ${req.user.email} at ${new Date().toISOString()}`);
+
+  return successResponse(res, 'Password changed successfully');
+});
+
+module.exports = {
+  auth,
+  logout,
+  refreshToken,
+  getProfile,
+  updateProfile,
+  changePassword
+};

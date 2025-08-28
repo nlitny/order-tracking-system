@@ -1,32 +1,33 @@
-# Node modules
-node_modules/
-npm-debug.log
-yarn-error.log
-
-# Local env files
-# .env
+# Environment files
+.env
 .env.local
-.env.development
 .env.production
-.env.test
+.env.development
+*.env
 
-# Prisma migrations cache
-backend/prisma/dev.db
+# Database
+postgres_password.txt
+postgres/postgresql.conf
+
 
 # Logs
 logs
 *.log
 
-# Docker volumes
-volumes/
-
-# Next build output
-frontend/.next/
-frontend/out/
-
-# Backend build output (if any)
-backend/dist/
-
-# OS system files
+# OS
 .DS_Store
 Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+
+node_modules/
+uploads/
+dist/
+build/
+/src/generated/prisma
+
