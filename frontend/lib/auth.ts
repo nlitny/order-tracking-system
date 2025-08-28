@@ -3,7 +3,6 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import axios from "axios";
 
-// Types
 interface UserWithAuth {
   id: string;
   email: string;
@@ -15,6 +14,7 @@ interface UserWithAuth {
   refreshToken: string;
   accessTokenExpires: number;
   refreshTokenExpires: number;
+  phone?: string;
 }
 
 interface AuthSuccessResponse {
@@ -64,7 +64,11 @@ function parseExpirationTime(timeString: string): number {
     d: 24 * 60 * 60 * 1000,
   };
 
-  return Math.floor((currentTime + value * (multipliers[unit] || 1000)) / 1000);
+  const expireTimeMs = currentTime + value * (multipliers[unit] || 1000);
+
+  const safeExpireTimeMs = expireTimeMs - 60000;
+
+  return Math.floor(safeExpireTimeMs / 1000);
 }
 
 export const authOptions: NextAuthOptions = {
@@ -85,24 +89,24 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          // ساخت داده برای ارسال
           const requestData: any = {
             email: credentials.email,
             password: credentials.password,
           };
 
-          // اضافه کردن فیلدهای ثبت‌نام در صورت وجود
           if (credentials.firstName) {
-            requestData.first_name = credentials.firstName;
-            requestData.last_name = credentials.lastName;
-            // rePassword را برای validation اضافه می‌کنیم
+            requestData.firstName = credentials.firstName;
+            requestData.lastName = credentials.lastName;
             if (credentials.rePassword) {
-              requestData.re_password = credentials.rePassword;
+              requestData.rePassword = credentials.rePassword;
             }
           }
 
+          const apiUrl =
+            process.env.NEXT_PUBLIC_API_BASEURL || "http://localhost:5000";
+
           const { data } = await axios.post<AuthSuccessResponse>(
-            `${process.env.NEXT_PUBLIC_API_URL}/auth/authlogin`,
+            `${apiUrl}/api/v1/auth/authlogin`,
             requestData
           );
 
@@ -110,7 +114,6 @@ export const authOptions: NextAuthOptions = {
             throw new Error(data.message || "Authentication failed");
           }
 
-          // بررسی اینکه پاسخ نهایی باشد (نه pending)
           if (data.data.status !== "login" && data.data.status !== "register") {
             throw new Error("Invalid response status");
           }
@@ -164,8 +167,13 @@ export const authOptions: NextAuthOptions = {
   ],
 
   callbacks: {
+    async redirect({ url, baseUrl }) {
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      if (new URL(url).origin === baseUrl) return url;
+      return `${baseUrl}/dashboard`;
+    },
+
     async jwt({ token, user, trigger, session }) {
-      // Initial login
       if (user) {
         const authUser = user as UserWithAuth;
 
@@ -176,6 +184,7 @@ export const authOptions: NextAuthOptions = {
           firstName: authUser.firstName,
           lastName: authUser.lastName,
           role: authUser.role,
+          phone: authUser.phone || null,
           isActive: authUser.isActive,
           accessToken: authUser.accessToken,
           refreshToken: authUser.refreshToken,
@@ -184,7 +193,6 @@ export const authOptions: NextAuthOptions = {
         };
       }
 
-      // Update logic
       if (trigger === "update" && session) {
         if (session.role) token.role = session.role;
         if (session.firstName) token.firstName = session.firstName;
@@ -194,7 +202,6 @@ export const authOptions: NextAuthOptions = {
 
       const currentTime = Math.floor(Date.now() / 1000);
 
-      // Refresh token expiry check
       if (
         token.refreshTokenExpires &&
         currentTime >= Number(token.refreshTokenExpires)
@@ -203,7 +210,6 @@ export const authOptions: NextAuthOptions = {
         return { ...token, error: "RefreshTokenExpired" };
       }
 
-      // Access token still valid
       if (
         token.accessTokenExpires &&
         currentTime < Number(token.accessTokenExpires)
@@ -211,13 +217,23 @@ export const authOptions: NextAuthOptions = {
         return token;
       }
 
-      // Refresh access token
       try {
         console.log("Refreshing access token...");
 
+        const apiUrl =
+          process.env.NEXT_PUBLIC_API_BASEURL || "http://localhost:5000";
+        console.log("CUrent access token:", token.accessToken);
+
         const { data } = await axios.post<RefreshTokenResponse>(
-          `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh-token`,
-          { refreshToken: token.refreshToken }
+          `${apiUrl}/api/v1/auth/refresh-token`,
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${token.accessToken}`,
+              "Content-Type": "application/json",
+            },
+            timeout: 10000,
+          }
         );
 
         if (!data.success || !data.data) {
@@ -261,6 +277,7 @@ export const authOptions: NextAuthOptions = {
           firstName: token.firstName as string,
           lastName: token.lastName as string,
           role: token.role as string,
+          phone: token.phone as string,
           isActive: token.isActive as boolean,
           accessToken: token.accessToken as string,
           refreshToken: token.refreshToken as string,
@@ -277,7 +294,7 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: "jwt",
-    maxAge: 7 * 24 * 60 * 60, // 7 days
+    maxAge: 7 * 24 * 60 * 60,
   },
   debug: process.env.NODE_ENV === "development",
 };

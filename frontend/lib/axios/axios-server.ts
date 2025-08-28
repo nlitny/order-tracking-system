@@ -1,22 +1,18 @@
-// axios instance
 import axios, { AxiosError, AxiosRequestConfig } from "axios";
-import { getSession, signOut } from "next-auth/react";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
-// حذف کنید: const API_URL = process.env.NEXT_PUBLIC_API_URL;
-// اکنون از relative path استفاده می‌کنیم
-
-const axiosInstance = axios.create({
-  baseURL: "/api/v1", // تغییر به relative path
+const axiosServer = axios.create({
+  baseURL: "/api/v1",
   timeout: 100000,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// باقی کد همانند قبل باقی می‌ماند
-axiosInstance.interceptors.request.use(
+axiosServer.interceptors.request.use(
   async (config) => {
-    const session = await getSession();
+    const session = await getServerSession(authOptions);
     if (session?.user?.accessToken) {
       config.headers.Authorization = `Bearer ${session.user.accessToken}`;
     }
@@ -25,7 +21,7 @@ axiosInstance.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-axiosInstance.interceptors.response.use(
+axiosServer.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as AxiosRequestConfig & {
@@ -41,4 +37,4 @@ axiosInstance.interceptors.response.use(
   }
 );
 
-export default axiosInstance;
+export default axiosServer;

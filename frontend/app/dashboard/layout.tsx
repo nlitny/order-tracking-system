@@ -62,7 +62,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     : DRAWER_WIDTH;
 
   return (
-    <ProtectedRoute requiredRoles={["customer", "staff", "admin"]}>
+    <ProtectedRoute requiredRoles={["CUSTOMER", "STAFF", "ADMIN"]}>
       <Box sx={{ display: "flex", minHeight: "100vh", borderRadius: 0 }}>
         {/* App Bar */}
         <AppBarComponent

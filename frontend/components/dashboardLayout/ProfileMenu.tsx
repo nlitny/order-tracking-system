@@ -11,50 +11,47 @@ import {
   Divider,
   alpha,
   useTheme,
+  CircularProgress,
 } from "@mui/material";
 import {
   Person as PersonIcon,
   Settings as SettingsIcon,
   Logout as LogoutIcon,
 } from "@mui/icons-material";
+import { useUser } from "@/context/UserContext";
+import { useLogout } from "@/hooks/useLogout";
 
 interface ProfileMenuProps {
   anchorEl: HTMLElement | null;
   open: boolean;
   onClose: () => void;
-  user?: {
-    name: string;
-    email: string;
-    role: string;
-    avatar?: string;
-    lastLogin?: string;
-  };
   version?: string;
   onProfileClick?: () => void;
   onSettingsClick?: () => void;
-  onLogoutClick?: () => void;
 }
 
 const ProfileMenu: React.FC<ProfileMenuProps> = ({
   anchorEl,
   open,
   onClose,
-  user = {
-    name: "Admin User",
-    email: "admin@dashboard.com",
-    role: "Administrator",
-    lastLogin: "Today 09:30 AM",
-  },
   version = "v2.1.0",
   onProfileClick,
   onSettingsClick,
-  onLogoutClick,
 }) => {
   const theme = useTheme();
+  const { user } = useUser();
+  const { logout, loading: logoutLoading } = useLogout();
 
   const handleMenuItemClick = (callback?: () => void) => {
-    onClose();
-    callback?.();
+    if (!logoutLoading) {
+      onClose();
+      callback?.();
+    }
+  };
+
+  const handleLogout = async () => {
+    onClose(); // بستن منو قبل از logout
+    await logout();
   };
 
   const getInitials = (name: string) => {
@@ -70,8 +67,8 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
     <Menu
       anchorEl={anchorEl}
       open={open}
-      onClose={onClose}
-      onClick={onClose}
+      onClose={logoutLoading ? undefined : onClose} // غیرفعال کردن close هنگام logout
+      onClick={logoutLoading ? undefined : onClose}
       disableAutoFocusItem
       PaperProps={{
         elevation: 0,
@@ -85,6 +82,8 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
           border: `1px solid ${alpha(theme.palette.divider, 0.12)}`,
           backdropFilter: "blur(20px)",
           boxShadow: theme.shadows[8],
+          opacity: logoutLoading ? 0.7 : 1, // کم کردن opacity هنگام logout
+          pointerEvents: logoutLoading ? "none" : "auto", // غیرفعال کردن تعامل
           "&:before": {
             content: '""',
             display: "block",
@@ -113,7 +112,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
         },
       }}
     >
-      {/* Profile Header */}
+      {/* Profile Header - کد قبلی همانند قبل */}
       <Box
         sx={{
           position: "relative",
@@ -130,7 +129,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
           {/* Avatar with Online Status */}
           <Box sx={{ position: "relative" }}>
             <Avatar
-              src={user.avatar}
+              src={user?.profileImage}
               sx={{
                 width: { xs: 48, sm: 52, md: 56 },
                 height: { xs: 48, sm: 52, md: 56 },
@@ -144,7 +143,10 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
                 fontWeight: 700,
               }}
             >
-              {!user.avatar && getInitials(user.name)}
+              {!user?.profileImage &&
+                getInitials(
+                  (user?.firstName || "") + " " + (user?.lastName || "")
+                )}
             </Avatar>
 
             {/* Online Status Indicator */}
@@ -155,11 +157,14 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
                 right: { xs: 2, sm: 4 },
                 width: { xs: 12, sm: 14, md: 16 },
                 height: { xs: 12, sm: 14, md: 16 },
-                bgcolor: "#4CAF50",
+                bgcolor: logoutLoading ? "#f44336" : "#4CAF50", // قرمز هنگام logout
                 borderRadius: "50%",
                 border: `3px solid ${theme.palette.background.paper}`,
-                boxShadow: `0 2px 6px ${alpha("#4CAF50", 0.3)}`,
-                animation: "pulse 2s infinite",
+                boxShadow: `0 2px 6px ${alpha(
+                  logoutLoading ? "#f44336" : "#4CAF50",
+                  0.3
+                )}`,
+                animation: logoutLoading ? "none" : "pulse 2s infinite",
                 "@keyframes pulse": {
                   "0%": {
                     boxShadow: `0 0 0 0 ${alpha("#4CAF50", 0.7)}`,
@@ -190,7 +195,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
                 whiteSpace: "nowrap",
               }}
             >
-              {user.name}
+              {user?.firstName} {user?.lastName}
             </Typography>
             <Typography
               variant="body2"
@@ -204,7 +209,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
                 opacity: 0.9,
               }}
             >
-              {user.email}
+              {user?.email}
             </Typography>
 
             {/* Role Badge */}
@@ -232,7 +237,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
                   letterSpacing: 0.5,
                 }}
               >
-                {user.role}
+                {user?.role}
               </Typography>
             </Box>
           </Box>
@@ -244,6 +249,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
         {/* Profile Menu Item */}
         <MenuItem
           onClick={() => handleMenuItemClick(onProfileClick)}
+          disabled={logoutLoading}
           sx={{
             py: { xs: 1.2, sm: 1.5 },
             px: { xs: 2.5, sm: 3, md: 3.5 },
@@ -264,6 +270,9 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
             },
             "&:active": {
               transform: "translateX(4px) scale(0.98)",
+            },
+            "&:disabled": {
+              opacity: 0.5,
             },
           }}
         >
@@ -302,6 +311,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
         {/* Settings Menu Item */}
         <MenuItem
           onClick={() => handleMenuItemClick(onSettingsClick)}
+          disabled={logoutLoading}
           sx={{
             py: { xs: 1.2, sm: 1.5 },
             px: { xs: 2.5, sm: 3, md: 3.5 },
@@ -322,6 +332,9 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
             },
             "&:active": {
               transform: "translateX(4px) scale(0.98)",
+            },
+            "&:disabled": {
+              opacity: 0.5,
             },
           }}
         >
@@ -373,14 +386,15 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
 
         {/* Logout Menu Item */}
         <MenuItem
-          onClick={() => handleMenuItemClick(onLogoutClick)}
+          onClick={handleLogout}
+          disabled={logoutLoading}
           sx={{
             py: { xs: 1.2, sm: 1.5 },
             px: { xs: 2.5, sm: 3, md: 3.5 },
             mx: 1,
             my: 0.5,
             borderRadius: 1,
-            color: "#d32f2f",
+            color: logoutLoading ? theme.palette.text.disabled : "#d32f2f",
             transition: theme.transitions.create(
               ["background-color", "transform", "box-shadow"],
               {
@@ -395,6 +409,10 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
             "&:active": {
               transform: "translateX(4px) scale(0.98)",
             },
+            "&:disabled": {
+              opacity: 0.7,
+              transform: "none",
+            },
           }}
         >
           <ListItemIcon
@@ -403,33 +421,44 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
               color: "inherit",
             }}
           >
-            <LogoutIcon
-              sx={{
-                fontSize: { xs: 20, sm: 22 },
-                transition: "transform 0.2s ease",
-                ".MuiMenuItem-root:hover &": {
-                  transform: "translateX(2px)",
-                },
-              }}
-            />
+            {logoutLoading ? (
+              <CircularProgress
+                size={20}
+                sx={{
+                  color: "#d32f2f",
+                }}
+              />
+            ) : (
+              <LogoutIcon
+                sx={{
+                  fontSize: { xs: 20, sm: 22 },
+                  transition: "transform 0.2s ease",
+                  ".MuiMenuItem-root:hover &": {
+                    transform: "translateX(2px)",
+                  },
+                }}
+              />
+            )}
           </ListItemIcon>
           <ListItemText
-            primary="Sign Out"
-            secondary="Logout from account"
+            primary={logoutLoading ? "Signing out..." : "Sign Out"}
+            secondary={logoutLoading ? "Please wait" : "Logout from account"}
             primaryTypographyProps={{
               fontSize: { xs: "0.85rem", sm: "0.9rem" },
               fontWeight: 600,
             }}
             secondaryTypographyProps={{
               fontSize: { xs: "0.75rem", sm: "0.8rem" },
-              color: alpha("#d32f2f", 0.7),
+              color: logoutLoading
+                ? theme.palette.text.disabled
+                : alpha("#d32f2f", 0.7),
               fontWeight: 400,
             }}
           />
         </MenuItem>
       </Box>
 
-      {/* Footer Section */}
+      {/* Footer Section - کد قبلی همانند قبل */}
       <Box
         sx={{
           px: { xs: 2.5, sm: 3, md: 3.5 },
@@ -458,7 +487,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
               fontWeight: 500,
             }}
           >
-            Last login: {user.lastLogin}
+            Last login: "unknown"
           </Typography>
 
           {/* Version Info */}

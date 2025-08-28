@@ -12,6 +12,7 @@ declare module "next-auth" {
       isActive: boolean;
       accessToken: string;
       refreshToken: string;
+      phone?: string | null;
     };
     error?: string;
   }
@@ -27,6 +28,7 @@ declare module "next-auth" {
     refreshToken: string;
     accessTokenExpires: number;
     refreshTokenExpires: number;
+    phone?: string | null;
   }
 }
 
@@ -43,5 +45,6 @@ declare module "next-auth/jwt" {
     accessTokenExpires: number;
     refreshTokenExpires: number;
     error?: string;
+    phone?: string | null;
   }
 }

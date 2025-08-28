@@ -26,8 +26,10 @@ const LoginForm: React.FC<LoginFormProps> = ({
       <TextField
         fullWidth
         label="Password"
+        variant="outlined"
         type={showPassword ? "text" : "password"}
         value={password}
+        placeholder="Enter your password"
         onChange={onPasswordChange}
         disabled={loading}
         error={!!passwordError}

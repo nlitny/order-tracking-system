@@ -67,6 +67,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           <TextField
             fullWidth
             label="First Name"
+            placeholder="Enter your first name"
             value={firstName}
             onChange={onFirstNameChange}
             disabled={loading}
@@ -83,6 +84,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           <TextField
             fullWidth
             label="Last Name"
+            placeholder="Enter your last name"
             value={lastName}
             onChange={onLastNameChange}
             disabled={loading}
@@ -102,6 +104,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           label="Create Password"
           type={showPassword ? "text" : "password"}
           value={password}
+          placeholder="Create a password"
           onChange={onPasswordChange}
           disabled={loading}
           error={!!errors.password}
@@ -133,6 +136,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           label="Confirm Password"
           type={showRePassword ? "text" : "password"}
           value={rePassword}
+          placeholder="Re-enter your password"
           onChange={onRePasswordChange}
           disabled={loading}
           error={!!errors.re_password}

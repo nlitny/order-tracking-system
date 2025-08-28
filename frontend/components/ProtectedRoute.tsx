@@ -11,7 +11,7 @@ import {
   Typography,
   Button,
 } from "@mui/material";
-import { useUser, useAuthState, useRoleAccess } from "@/context/UserContext";
+import { useUser, useAuthState } from "@/context/UserContext";
 
 // Types aligned with our authentication system
 interface ProtectedRouteProps {
@@ -65,7 +65,6 @@ function useAuthProtection(
     isSessionReady,
   } = useUser();
   const { isInitializing, isReady, shouldShowLogin } = useAuthState();
-  const { hasAnyRole } = useRoleAccess();
 
   const [localLoading, setLocalLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

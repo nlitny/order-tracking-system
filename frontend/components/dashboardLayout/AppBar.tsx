@@ -332,16 +332,9 @@ export default function AppBarComponent({
         anchorEl={profileAnchorEl}
         open={Boolean(profileAnchorEl)}
         onClose={handleProfileClose}
-        user={{
-          name: "John Doe",
-          email: "john.doe@dashboard.com",
-          role: "Administrator",
-          lastLogin: "Today 09:30 AM",
-        }}
         version="v2.1.0"
         onProfileClick={handleMyProfileClick}
         onSettingsClick={handleSettingsClick}
-        onLogoutClick={handleLogoutClick}
       />
 
       {/* Mobile More Options Menu */}

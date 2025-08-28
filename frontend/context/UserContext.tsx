@@ -12,27 +12,18 @@ import React, {
 import { useSession } from "next-auth/react";
 import axiosInstance from "@/lib/axios/csrAxios";
 
-// Types based on the new API response
+// Essential User Data Types - فقط اطلاعات ضروری
 export interface UserData {
   id: string;
   email: string;
   firstName: string;
   lastName: string;
-  phone?: string;
+  phone?: string | null;
   role: string;
   isActive: boolean;
+  profileImage?: string;
   createdAt?: string;
   updatedAt?: string;
-
-  // Optional fields that might be added later
-  avatar?: string;
-  profilePicture?: string;
-  isTwoStepEnabled?: boolean;
-  stripeAccountId?: string | null;
-  stripeAccountEnabled?: boolean;
-  stripeAccountStatus?: string | null;
-  likedProjects?: string[];
-  savedProjects?: string[];
 }
 
 // API Response type
@@ -51,7 +42,7 @@ enum UserState {
   AUTHENTICATED = "authenticated",
   UNAUTHENTICATED = "unauthenticated",
   ERROR = "error",
-  SESSION_LOADING = "session_loading",
+  REFRESHING = "refreshing",
 }
 
 interface UserContextType {
@@ -62,6 +53,7 @@ interface UserContextType {
   state: UserState;
   fetchUser: () => Promise<void>;
   updateUser: (userData: UserData) => void;
+  updateUserSession: () => Promise<void>;
   clearUser: () => void;
   isAuthenticated: boolean;
   isSessionReady: boolean;
@@ -75,14 +67,14 @@ interface UserProviderProps {
 
 // Configuration
 const CONFIG = {
-  MAX_RETRY_ATTEMPTS: 5,
-  INITIAL_RETRY_DELAY: 500, // ms
-  MAX_RETRY_DELAY: 5000, // ms
-  SESSION_SETTLE_TIME: 300, // ms - زمان انتظار برای تسویه session
+  AUTO_REFRESH_INTERVAL: 5 * 60 * 1000, // 5 دقیقه
+  MAX_RETRY_ATTEMPTS: 3,
+  RETRY_DELAY: 2000,
+  SESSION_SETTLE_TIME: 500,
 } as const;
 
 export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
-  const { data: session, status } = useSession();
+  const { data: session, status, update: updateSession } = useSession();
 
   // States
   const [user, setUser] = useState<UserData | null>(null);
@@ -90,277 +82,365 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [isError, setIsError] = useState(false);
   const [error, setError] = useState<any>(null);
 
-  // Refs for tracking
+  // Refs for preventing loops and managing operations
   const abortControllerRef = useRef<AbortController | null>(null);
-  const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lastSessionStateRef = useRef<string | null>(null);
+  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const isInitializedRef = useRef(false);
+  const isFetchingRef = useRef(false); // 🔴 جلوگیری از multiple fetch
+  const lastFetchTimeRef = useRef<number>(0); // 🔴 جلوگیری از درخواست های مکرر
+  const retryCountRef = useRef<number>(0);
 
   // Computed values
-  const loading =
-    state === UserState.LOADING || state === UserState.SESSION_LOADING;
+  const loading = state === UserState.LOADING || state === UserState.REFRESHING;
   const isAuthenticated = state === UserState.AUTHENTICATED && !!user;
   const isSessionReady = status !== "loading";
 
-  // Cancel any pending operations
-  const cancelPendingOperations = useCallback(() => {
+  // Cancel operations
+  const cancelOperations = useCallback(() => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
-
-    if (fetchTimeoutRef.current) {
-      clearTimeout(fetchTimeoutRef.current);
-      fetchTimeoutRef.current = null;
+    if (refreshIntervalRef.current) {
+      clearInterval(refreshIntervalRef.current);
+      refreshIntervalRef.current = null;
     }
+    isFetchingRef.current = false;
   }, []);
 
-  // Calculate retry delay with exponential backoff
-  const calculateRetryDelay = (attempt: number): number => {
-    const delay = CONFIG.INITIAL_RETRY_DELAY * Math.pow(2, attempt - 1);
-    return Math.min(delay, CONFIG.MAX_RETRY_DELAY);
-  };
+  // Extract essential user data from API response
+  const extractEssentialUserData = useCallback((userData: any): UserData => {
+    return {
+      id: userData.id,
+      email: userData.email,
+      firstName: userData.firstName || userData.first_name,
+      lastName: userData.lastName || userData.last_name,
+      phone: userData.phone,
+      role: userData.role,
+      isActive: userData.isActive,
+      profileImage: userData.profileImage || userData.profile_image,
+      createdAt: userData.createdAt,
+      updatedAt: userData.updatedAt,
+    };
+  }, []);
 
-  // Sleep utility
-  const sleep = (ms: number): Promise<void> => {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  };
-
-  // Check if error is retryable
-  const isRetryableError = (error: any): boolean => {
-    if (!error.response) return true; // Network errors are retryable
-
-    const status = error.response.status;
-    // Retry on 401 (might be session timing), 5xx errors, and 429 (rate limit)
-    return status === 401 || status === 429 || (status >= 500 && status < 600);
-  };
-
-  // Enhanced fetch user with proper error handling and retry logic
+  // 🔴 اصلاح شده - جلوگیری از infinite loop
   const fetchUser = useCallback(
-    async (
-      isRetry: boolean = false,
-      retryAttempt: number = 1
-    ): Promise<void> => {
-      // Cancel any existing request
-      cancelPendingOperations();
-
-      // Don't fetch if session is not authenticated or no access token
-      if (status !== "authenticated" || !session?.user?.accessToken) {
+    async (force: boolean = false): Promise<void> => {
+      // جلوگیری از درخواست مکرر
+      if (isFetchingRef.current && !force) {
+        console.log("🚫 Fetch already in progress, skipping...");
         return;
       }
 
-      // Set loading state
-      if (!isRetry) {
-        setState(UserState.LOADING);
-        setIsError(false);
-        setError(null);
+      // جلوگیری از درخواست های خیلی نزدیک به هم (حداقل 1 ثانیه فاصله)
+      const now = Date.now();
+      if (!force && now - lastFetchTimeRef.current < 1000) {
+        console.log("🚫 Too frequent fetch request, skipping...");
+        return;
       }
 
-      // Create new abort controller
+      if (status !== "authenticated" || !session?.user?.accessToken) {
+        console.log("🚫 Not authenticated or no access token");
+        return;
+      }
+
+      isFetchingRef.current = true;
+      lastFetchTimeRef.current = now;
+      setState(UserState.LOADING);
+      setIsError(false);
+      setError(null);
+
+      // Cancel any existing request
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
       abortControllerRef.current = new AbortController();
 
       try {
-        // Use the new profile endpoint
+        console.log("🔄 Fetching user profile...");
+
         const response = await axiosInstance.get<ProfileApiResponse>(
           "/auth/profile",
           {
             signal: abortControllerRef.current.signal,
-            timeout: 10000, // 10 second timeout
+            timeout: 10000,
             headers: {
               Authorization: `Bearer ${session.user.accessToken}`,
             },
           }
         );
 
-        // Check if API response is successful
         if (!response.data.success || !response.data.data?.user) {
-          throw new Error(
-            response.data.message || "Failed to fetch user profile"
-          );
+          throw new Error("Invalid API response");
         }
 
-        const userData = response.data.data.user;
+        const userData = extractEssentialUserData(response.data.data.user);
 
-        // Process profile picture URL if exists
-        if (userData.profilePicture) {
-          userData.profilePicture = userData.profilePicture.replace(
-            "/api/users",
-            ""
-          );
-        }
-
-        // Map any additional fields from session if needed
-        const enhancedUserData: UserData = {
-          ...userData,
-          // Add any session-based fields if needed
-          ...(session.user.firstName && { firstName: session.user.firstName }),
-          ...(session.user.lastName && { lastName: session.user.lastName }),
-        };
-
-        setUser(enhancedUserData);
+        setUser(userData);
         setState(UserState.AUTHENTICATED);
         setIsError(false);
         setError(null);
+        retryCountRef.current = 0; // Reset retry count on success
 
-        console.log("✅ User profile fetched successfully:", enhancedUserData);
+        console.log("✅ User profile fetched successfully:", userData);
       } catch (err: any) {
-        console.error("❌ Error fetching user profile:", err);
-
-        // Handle abort
         if (err.name === "AbortError" || err.code === "ERR_CANCELED") {
+          console.log("🚫 Request was canceled");
           return;
         }
 
-        // Handle API error responses
-        if (err.response?.data) {
-          const apiError = err.response.data;
-          console.error("API Error:", apiError.message || apiError);
-        }
+        console.error("❌ Error fetching user:", err);
 
-        // Check if we should retry
-        const shouldRetry =
-          retryAttempt < CONFIG.MAX_RETRY_ATTEMPTS && isRetryableError(err);
+        // Handle different error types
+        const status = err.response?.status;
 
-        if (shouldRetry) {
-          console.log(
-            `🔄 Retrying user fetch (attempt ${retryAttempt + 1}/${
-              CONFIG.MAX_RETRY_ATTEMPTS
-            })`
-          );
-          const delay = calculateRetryDelay(retryAttempt);
-
-          fetchTimeoutRef.current = setTimeout(() => {
-            fetchUser(true, retryAttempt + 1);
-          }, delay);
-        } else {
-          // Final failure
-          console.error(
-            `💥 Failed to fetch user after ${retryAttempt} attempts`
-          );
+        if (status === 401) {
+          // Unauthorized - clear user and session
+          console.error("🚫 Unauthorized access - clearing user data");
+          setUser(null);
+          setState(UserState.UNAUTHENTICATED);
+          clearInterval(refreshIntervalRef.current!);
+        } else if (status === 403) {
+          // Forbidden - don't retry, but keep current user data
+          console.error("🚫 Forbidden access - keeping current user data");
           setIsError(true);
           setError(err);
-          setUser(null);
+          // Don't change state if we have user data
+          if (!user) {
+            setState(UserState.ERROR);
+          }
+        } else if (status >= 500 || !status) {
+          // Server errors or network errors - retry with exponential backoff
+          retryCountRef.current++;
+
+          if (retryCountRef.current <= CONFIG.MAX_RETRY_ATTEMPTS) {
+            const delay =
+              CONFIG.RETRY_DELAY * Math.pow(2, retryCountRef.current - 1);
+            console.log(
+              `🔄 Retrying in ${delay}ms (attempt ${retryCountRef.current}/${CONFIG.MAX_RETRY_ATTEMPTS})`
+            );
+
+            setTimeout(() => {
+              fetchUser(true);
+            }, delay);
+            return;
+          } else {
+            console.error("❌ Max retry attempts reached");
+          }
+        }
+
+        setIsError(true);
+        setError(err);
+
+        // Only set error state if we don't have user data
+        if (!user) {
           setState(UserState.ERROR);
         }
+      } finally {
+        isFetchingRef.current = false;
       }
     },
-    [status, session?.user?.accessToken, cancelPendingOperations]
+    [status, session?.user?.accessToken, extractEssentialUserData, user]
   );
 
-  // Update user data
+  // 🔴 اصلاح شده - حذف recursive call
+  const updateUserSession = useCallback(async (): Promise<void> => {
+    if (!session?.user || !user) {
+      console.warn("No session or user data to update");
+      return;
+    }
+
+    try {
+      console.log("🔄 Updating session...");
+
+      await updateSession({
+        ...session,
+        user: {
+          ...session.user,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+          isActive: user.isActive,
+        },
+      });
+
+      console.log("✅ Session updated successfully");
+    } catch (error) {
+      console.error("❌ Failed to update session:", error);
+    }
+  }, [session, user, updateSession]);
+
+  // 🔴 اصلاح شده - حذف recursive call
   const updateUser = useCallback(
     (userData: UserData) => {
       console.log("🔄 Updating user data:", userData);
       setUser(userData);
+
       if (state !== UserState.AUTHENTICATED) {
         setState(UserState.AUTHENTICATED);
       }
+
+      // فقط session را آپدیت کن بدون dependency loop
+      updateUserSession().catch(console.error);
     },
-    [state]
+    [state, updateUserSession]
   );
 
   // Clear user data
   const clearUser = useCallback(() => {
     console.log("🧹 Clearing user data");
-    cancelPendingOperations();
+    cancelOperations();
     setUser(null);
     setState(UserState.UNAUTHENTICATED);
     setIsError(false);
     setError(null);
-  }, [cancelPendingOperations]);
+    retryCountRef.current = 0;
+  }, [cancelOperations]);
 
-  // Handle session changes with proper timing
+  // 🔴 اصلاح شده - Auto refresh بدون loop
+  const startAutoRefresh = useCallback(() => {
+    if (refreshIntervalRef.current) {
+      clearInterval(refreshIntervalRef.current);
+    }
+
+    refreshIntervalRef.current = setInterval(async () => {
+      if (
+        status === "authenticated" &&
+        session?.user?.accessToken &&
+        state === UserState.AUTHENTICATED &&
+        !isFetchingRef.current // فقط اگر درحال fetch نباشیم
+      ) {
+        console.log("🔄 Auto-refreshing user data...");
+
+        try {
+          const response = await axiosInstance.get<ProfileApiResponse>(
+            "/auth/profile",
+            {
+              timeout: 5000, // کاهش timeout برای auto-refresh
+              headers: {
+                Authorization: `Bearer ${session.user.accessToken}`,
+              },
+            }
+          );
+
+          if (response.data.success && response.data.data?.user) {
+            const newUserData = extractEssentialUserData(
+              response.data.data.user
+            );
+
+            // فقط در صورت تغییر واقعی داده‌ها آپدیت کن
+            const hasChanges =
+              JSON.stringify(user) !== JSON.stringify(newUserData);
+
+            if (hasChanges) {
+              console.log("📱 User data changed, updating...");
+              setUser(newUserData);
+            } else {
+              console.log("✅ User data is up to date");
+            }
+          }
+        } catch (error: any) {
+          const status = error.response?.status;
+          if (status === 401) {
+            // Token expired, clear user
+            console.error("🚫 Token expired during auto-refresh");
+            clearUser();
+          } else {
+            console.error("❌ Auto-refresh failed:", error.message);
+          }
+        }
+      }
+    }, CONFIG.AUTO_REFRESH_INTERVAL);
+
+    console.log("⏰ Auto-refresh started (every 5 minutes)");
+  }, [
+    status,
+    session?.user?.accessToken,
+    state,
+    user,
+    extractEssentialUserData,
+    clearUser,
+  ]);
+
+  const stopAutoRefresh = useCallback(() => {
+    if (refreshIntervalRef.current) {
+      clearInterval(refreshIntervalRef.current);
+      refreshIntervalRef.current = null;
+      console.log("⏹️ Auto-refresh stopped");
+    }
+  }, []);
+
+  // 🔴 اصلاح شده - Handle session changes بدون infinite loop
   useEffect(() => {
     const handleSessionChange = async () => {
-      const currentSessionState = `${status}-${
-        session?.user?.email || "none"
-      }-${session?.user?.accessToken ? "token" : "no-token"}`;
-
-      // Skip if session state hasn't actually changed
-      if (
-        currentSessionState === lastSessionStateRef.current &&
-        isInitializedRef.current
-      ) {
-        return;
-      }
-
-      console.log("🔄 Session state changed:", {
-        status,
-        hasSession: !!session,
-        hasToken: !!session?.user?.accessToken,
-        userEmail: session?.user?.email,
-      });
-
-      lastSessionStateRef.current = currentSessionState;
+      console.log("🔄 Session status changed:", status);
 
       switch (status) {
         case "loading":
           if (!isInitializedRef.current) {
-            console.log("⏳ Session loading...");
-            setState(UserState.SESSION_LOADING);
+            setState(UserState.LOADING);
           }
           break;
 
         case "authenticated":
-          // Check if we have necessary session data
           if (!session?.user?.accessToken) {
-            console.warn("⚠️ Session authenticated but no access token found");
+            console.warn("⚠️ No access token in session");
             clearUser();
+            stopAutoRefresh();
             break;
           }
 
-          console.log("✅ Session authenticated, fetching user profile...");
-          // Add a small delay to ensure session is fully settled
-          setState(UserState.LOADING);
-
-          // Wait a bit for session to fully settle, especially after login
-          await sleep(CONFIG.SESSION_SETTLE_TIME);
-
-          // Double-check we're still authenticated after the delay
-          if (status === "authenticated" && session?.user?.accessToken) {
+          // فقط در صورت عدم وجود user یا عدم initialization
+          if (!isInitializedRef.current || (!user && !isFetchingRef.current)) {
+            console.log("✅ Authenticated, fetching user profile...");
             await fetchUser();
+            startAutoRefresh();
+            isInitializedRef.current = true;
+          } else if (user && !refreshIntervalRef.current) {
+            // اگر user موجود است اما auto-refresh فعال نیست
+            startAutoRefresh();
           }
           break;
 
         case "unauthenticated":
-          console.log("❌ Session unauthenticated, clearing user");
+          console.log("❌ Unauthenticated");
           clearUser();
+          stopAutoRefresh();
+          isInitializedRef.current = false;
           break;
-
-        default:
-          console.log("🔄 Session state idle");
-          setState(UserState.IDLE);
       }
-
-      isInitializedRef.current = true;
     };
 
     handleSessionChange();
   }, [
     status,
-    session?.user?.email,
     session?.user?.accessToken,
+    // 🔴 حذف user از dependency ها تا از infinite loop جلوگیری شود
+    // user,
     fetchUser,
     clearUser,
+    startAutoRefresh,
+    stopAutoRefresh,
   ]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      console.log("🧹 UserProvider unmounting, cleaning up");
-      cancelPendingOperations();
+      console.log("🧹 UserProvider unmounting");
+      cancelOperations();
     };
-  }, [cancelPendingOperations]);
+  }, [cancelOperations]);
 
-  // Context value
   const contextValue: UserContextType = {
     user,
     loading,
     isError,
     error,
     state,
-    fetchUser: () => fetchUser(),
+    fetchUser: () => fetchUser(false),
     updateUser,
+    updateUserSession,
     clearUser,
     isAuthenticated,
     isSessionReady,
@@ -371,7 +451,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   );
 };
 
-// Enhanced useUser hook
+// useUser hook
 export const useUser = (): UserContextType => {
   const context = useContext(UserContext);
   if (!context) {
@@ -380,7 +460,7 @@ export const useUser = (): UserContextType => {
   return context;
 };
 
-// Enhanced useUserData hook with more utilities
+// Enhanced utility hooks (بدون تغییر)
 export const useUserData = () => {
   const { user, loading, isError, state, isAuthenticated, isSessionReady } =
     useUser();
@@ -392,26 +472,21 @@ export const useUserData = () => {
     isAuthenticated,
     isSessionReady,
     state,
-    fullName: user ? `${user.firstName} ${user.lastName}` : "",
+    fullName: user ? `${user.firstName} ${user.lastName}`.trim() : "",
     initials: user
-      ? `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase()
+      ? `${user.firstName?.charAt(0) || ""}${
+          user.lastName?.charAt(0) || ""
+        }`.toUpperCase()
       : "",
-    // Role-based utilities
-    hasRole: (role: string) => user?.role === role || false,
-    hasAnyRole: (roles: string[]) => roles.includes(user?.role || "") || false,
-    isCustomer: user?.role === "CUSTOMER",
-    isAdmin: user?.role === "ADMIN",
-    isVendor: user?.role === "VENDOR",
-    // Profile completeness
-    isProfileComplete: user
-      ? !!(user.firstName && user.lastName && user.email)
-      : false,
-    // Activity status
+    hasRole: (role: string) => user?.role === role,
+    hasAnyRole: (roles: string[]) => roles.includes(user?.role || ""),
     isActiveUser: user?.isActive === true,
+    hasProfileImage: !!user?.profileImage,
+    profileImageUrl: user?.profileImage || null,
   };
 };
 
-// Hook for handling authentication state in components
+// Auth state hook (بدون تغییر)
 export const useAuthState = () => {
   const { state, loading, isAuthenticated, isSessionReady } = useUser();
 
@@ -420,27 +495,11 @@ export const useAuthState = () => {
     loading,
     isAuthenticated,
     isSessionReady,
-    isInitializing:
-      state === UserState.SESSION_LOADING ||
-      (!isSessionReady && !isAuthenticated),
+    isInitializing: state === UserState.LOADING,
     isReady:
       isSessionReady &&
       (isAuthenticated || state === UserState.UNAUTHENTICATED),
     shouldShowLogin: isSessionReady && state === UserState.UNAUTHENTICATED,
-    shouldWaitForAuth: !isSessionReady || state === UserState.SESSION_LOADING,
-  };
-};
-
-// Hook for role-based access control
-export const useRoleAccess = () => {
-  const { user } = useUser();
-
-  return {
-    canAccessAdmin: user?.role === "ADMIN",
-    canAccessVendor: user?.role === "VENDOR" || user?.role === "ADMIN",
-    canAccessCustomer: !!user && user.isActive,
-    hasRole: (role: string) => user?.role === role,
-    hasAnyRole: (roles: string[]) => roles.includes(user?.role || ""),
-    userRole: user?.role || null,
+    shouldWaitForAuth: !isSessionReady || state === UserState.LOADING,
   };
 };
