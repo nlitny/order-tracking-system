@@ -20,21 +20,22 @@ class OrderController {
   }
 
   async updateOrderStatus(req, res, next) {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
-    const adminId = req.user.id;
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+      const adminId = req.user.id;
 
-    const updatedOrder = await orderService.updateOrderStatus(id, status, adminId);
+      const updatedOrder = await orderService.updateOrderStatus(
+        id,
+        status,
+        adminId
+      );
 
-    return successResponse(res, {
-      message: "Order status updated successfully",
-      data: updatedOrder
-    });
-  } catch (error) {
-    next(error);
+      successResponse(res, "Order status updated successfully", updatedOrder);
+    } catch (error) {
+      next(error);
+    }
   }
-}
 
   /**
    * Get all orders
@@ -46,8 +47,8 @@ class OrderController {
       const userId = req.user.id;
 
       const filters = { status, search };
-      
-      if (userRole === 'CUSTOMER') {
+
+      if (userRole === "CUSTOMER") {
         filters.customerId = userId;
       }
 
@@ -73,8 +74,8 @@ class OrderController {
       const userRole = req.user.role;
       const userId = req.user.id;
 
-      const userIdFilter = userRole === 'CUSTOMER' ? userId : null;
-      
+      const userIdFilter = userRole === "CUSTOMER" ? userId : null;
+
       const order = await orderService.getOrderById(id, userIdFilter);
 
       return successResponse(res, "Order retrieved successfully", order);
