@@ -1,4 +1,3 @@
-
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const bcrypt = require("bcrypt");
@@ -14,6 +13,10 @@ class AdminService {
       throw new AppError("Email already exists", 400);
     }
 
+    if (!['ADMIN', 'STAFF'].includes(userData.role)) {
+      throw new AppError("Invalid role. Only ADMIN or STAFF allowed", 400);
+    }
+
     const hashedPassword = await bcrypt.hash(userData.password, 12);
 
     const newAdmin = await prisma.user.create({
@@ -23,7 +26,7 @@ class AdminService {
         firstName: userData.firstName.trim(),
         lastName: userData.lastName.trim(),
         isActive: true,
-        role: "ADMIN"
+        role: userData.role 
       },
       select: {
         id: true,

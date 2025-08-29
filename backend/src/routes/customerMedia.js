@@ -18,7 +18,7 @@ router.use(authenticateToken);
  */
 router.post(
   '/:id/customermedia',
-  upload.array('files', 10), // حداکثر 10 فایل
+  upload.array('files', 10), 
   customerMediaController.uploadMedia
 );
 

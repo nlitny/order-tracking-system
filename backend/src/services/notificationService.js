@@ -1,15 +1,12 @@
 
-// services/notificationService.js
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 class NotificationService {
-  // ارسال اعلان برای ساخت order جدید
   async createOrderNotifications(order, customerId) {
     try {
       const notifications = [];
       
-      // اعلان برای customer
       const customerNotification = await prisma.notification.create({
         data: {
           userId: customerId,
@@ -22,7 +19,6 @@ class NotificationService {
       });
       notifications.push(customerNotification);
 
-      // گرفتن لیست admin ها و staff ها
       const adminsAndStaff = await prisma.user.findMany({
         where: {
           role: {
@@ -37,7 +33,6 @@ class NotificationService {
         }
       });
 
-      // ارسال اعلان برای admin ها و staff ها
       for (const user of adminsAndStaff) {
         const adminNotification = await prisma.notification.create({
           data: {
@@ -59,7 +54,6 @@ class NotificationService {
     }
   }
 
-  // ارسال اعلان برای تغییر status
   async createStatusUpdateNotification(order, newStatus) {
     try {
       let title = '';
@@ -104,7 +98,6 @@ class NotificationService {
     }
   }
 
-  // گرفتن تمام اعلان‌های یک کاربر
   async getUserNotifications(userId, page = 1, limit = 20) {
     try {
       const skip = (page - 1) * limit;
@@ -147,10 +140,8 @@ class NotificationService {
     }
   }
 
-  // علامت‌گذاری اعلان به عنوان خوانده شده
   async markAsRead(notificationId, userId) {
     try {
-      // بررسی اینکه اعلان متعلق به همین کاربر است
       const notification = await prisma.notification.findFirst({
         where: {
           id: notificationId,
@@ -174,7 +165,6 @@ class NotificationService {
     }
   }
 
-  // گرفتن تعداد اعلان‌های خوانده نشده
   async getUnreadCount(userId) {
     try {
       const count = await prisma.notification.count({

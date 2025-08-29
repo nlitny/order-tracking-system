@@ -70,7 +70,6 @@ class OrderService {
         return order;
       });
 
-      // ارسال اعلان‌ها پس از ساخت موفقیت‌آمیز order
       await notificationService.createOrderNotifications(result, customerId);
 
       return result;
@@ -131,7 +130,6 @@ class OrderService {
         return updatedOrder;
       });
 
-      // ارسال اعلان تغییر وضعیت (فقط برای وضعیت‌های خاص)
       const notificationStatuses = ['IN_PROGRESS', 'ON_HOLD', 'CANCELLED', 'COMPLETED'];
       if (notificationStatuses.includes(newStatus)) {
         await notificationService.createStatusUpdateNotification(result, newStatus);

@@ -1,5 +1,4 @@
 
-// services/userService.js
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const AppError = require("../utils/AppError");

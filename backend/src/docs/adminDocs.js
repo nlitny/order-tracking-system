@@ -1,12 +1,5 @@
 /**
  * @swagger
- * tags:
- *   - name: Admin
- *     description: Admin management endpoints
- */
-
-/**
- * @swagger
  * components:
  *   schemas:
  *     RegisterAdminRequest:
@@ -34,17 +27,22 @@
  *           type: string
  *           minLength: 6
  *           example: "SecurePass123!"
- *       required: ["email", "firstName", "lastName", "password", "rePassword"]
+ *         role:
+ *           type: string
+ *           enum: [ADMIN, STAFF]
+ *           example: "STAFF"
+ *           description: "User role - can be either ADMIN or STAFF"
+ *       required: ["email", "firstName", "lastName", "password", "rePassword", "role"]
  *       additionalProperties: false
- *       description: "All fields are required. Password and rePassword must match."
+ *       description: "All fields are required. Password and rePassword must match. Role must be ADMIN or STAFF."
  */
 
 /**
  * @swagger
  * /api/v1/admin/register:
  *   post:
- *     summary: Register a new admin (Admin only)
- *     description: Allows an existing ADMIN to create another ADMIN account.
+ *     summary: Register a new admin or staff (Admin only)
+ *     description: Allows an existing ADMIN to create another ADMIN or STAFF account.
  *     tags: [Admin]
  *     security:
  *       - bearerAuth: []
@@ -55,78 +53,79 @@
  *           schema:
  *             $ref: '#/components/schemas/RegisterAdminRequest'
  *           examples:
- *             valid_request:
- *               summary: Valid registration
+ *             register_admin:
+ *               summary: Register new admin
  *               value:
  *                 email: "admin2@example.com"
  *                 firstName: "John"
  *                 lastName: "Smith"
  *                 password: "StrongPass123"
  *                 rePassword: "StrongPass123"
- *             password_mismatch:
- *               summary: Password mismatch
+ *                 role: "ADMIN"
+ *             register_staff:
+ *               summary: Register new staff
  *               value:
- *                 email: "admin2@example.com"
- *                 firstName: "John"
- *                 lastName: "Smith"
- *                 password: "StrongPass123"
- *                 rePassword: "WrongPass456"
+ *                 email: "staff@example.com"
+ *                 firstName: "Jane"
+ *                 lastName: "Doe"
+ *                 password: "StaffPass123"
+ *                 rePassword: "StaffPass123"
+ *                 role: "STAFF"
  *     responses:
  *       201:
- *         description: Admin registered successfully
+ *         description: Admin/Staff registered successfully
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/SuccessResponse'
- *             example:
- *               success: true
- *               message: "Admin registered successfully"
- *               data:
- *                 user:
- *                   id: "clx1234567890"
- *                   email: "admin2@example.com"
- *                   firstName: "John"
- *                   lastName: "Smith"
- *                   role: "ADMIN"
- *                   createdAt: "2025-08-29T10:30:00.000Z"
+ *             examples:
+ *               admin_created:
+ *                 summary: Admin created
+ *                 value:
+ *                   success: true
+ *                   message: "ADMIN registered successfully"
+ *                   data:
+ *                     user:
+ *                       id: "clx1234567890"
+ *                       email: "admin2@example.com"
+ *                       firstName: "John"
+ *                       lastName: "Smith"
+ *                       role: "ADMIN"
+ *                       createdAt: "2025-08-29T10:30:00.000Z"
+ *               staff_created:
+ *                 summary: Staff created
+ *                 value:
+ *                   success: true
+ *                   message: "STAFF registered successfully"
+ *                   data:
+ *                     user:
+ *                       id: "clx1234567891"
+ *                       email: "staff@example.com"
+ *                       firstName: "Jane"
+ *                       lastName: "Doe"
+ *                       role: "STAFF"
+ *                       createdAt: "2025-08-29T10:30:00.000Z"
  *       400:
- *         description: Validation error (e.g., duplicate email, missing fields, password mismatch)
+ *         description: Validation error
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  *             examples:
+ *               invalid_role:
+ *                 summary: Invalid role
+ *                 value:
+ *                   success: false
+ *                   message: "Role must be either ADMIN or STAFF"
  *               missing_fields:
  *                 summary: Missing required fields
  *                 value:
  *                   success: false
  *                   message: "All fields are required"
- *               duplicate_email:
- *                 summary: Duplicate email
- *                 value:
- *                   success: false
- *                   message: "Email already exists"
- *               password_mismatch:
- *                 summary: Password mismatch
- *                 value:
- *                   success: false
- *                   message: "Passwords do not match"
  *       401:
- *         description: Unauthorized - invalid or missing token
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *         description: Unauthorized
  *       403:
  *         description: Forbidden - only ADMIN allowed
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  *       500:
  *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  */

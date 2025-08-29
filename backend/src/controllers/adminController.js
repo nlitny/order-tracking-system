@@ -1,14 +1,12 @@
-
-// controllers/adminController.js
 const adminService = require("../services/adminService");
 const { successResponse, errorResponse } = require("../utils/responses");
 
 class AdminController {
   async registerAdmin(req, res, next) {
     try {
-      const { email, firstName, lastName, password, rePassword } = req.body;
+      const { email, firstName, lastName, password, rePassword, role } = req.body;
 
-      if (!email || !firstName || !lastName || !password || !rePassword) {
+      if (!email || !firstName || !lastName || !password || !rePassword || !role) {
         return errorResponse(res, "All fields are required", 400);
       }
 
@@ -16,16 +14,21 @@ class AdminController {
         return errorResponse(res, "Passwords do not match", 400);
       }
 
+      if (!['ADMIN', 'STAFF'].includes(role)) {
+        return errorResponse(res, "Role must be either ADMIN or STAFF", 400);
+      }
+
       const newAdmin = await adminService.createAdmin({
         email,
         firstName,
         lastName,
-        password
+        password,
+        role
       });
 
       return successResponse(
         res,
-        "Admin registered successfully",
+        `${role} registered successfully`,
         { user: newAdmin },
         201
       );
