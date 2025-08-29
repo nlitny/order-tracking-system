@@ -57,7 +57,6 @@ const authenticateToken = async (req, res, next) => {
   }
 };
 
-// میدلور جدید برای refresh token
 const authenticateRefreshToken = async (req, res, next) => {
   const { refreshToken } = req.body;
 
@@ -66,7 +65,6 @@ const authenticateRefreshToken = async (req, res, next) => {
   }
 
   try {
-    // بررسی در دیتابیس
     const storedToken = await prisma.refreshToken.findUnique({
       where: { token: refreshToken },
       include: {
@@ -95,7 +93,6 @@ const authenticateRefreshToken = async (req, res, next) => {
       return errorResponse(res, "Invalid or expired refresh token", 403);
     }
 
-    // بررسی JWT
     const decoded = verifyRefreshToken(refreshToken);
     if (!decoded || decoded.userId !== storedToken.userId) {
       return errorResponse(res, "Invalid refresh token", 403);

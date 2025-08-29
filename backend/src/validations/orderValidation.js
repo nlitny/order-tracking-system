@@ -1,4 +1,3 @@
-// src/validations/orderValidation.js
 const Joi = require('joi');
 
 const createOrderSchema = Joi.object({

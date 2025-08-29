@@ -3,6 +3,7 @@ const cors = require("cors");
 const helmet = require("helmet");
 const compression = require("compression");
 const morgan = require("morgan");
+const seed = require('./prisma/seed');
 
 const { generalRateLimit } = require("./src/middleware/rateLimit");
 const errorHandler = require("./src/middleware/errorHandler");
@@ -12,6 +13,8 @@ const notFoundHandler = require("./src/middleware/notFound");
 const authRoutes = require("./src/routes/auth");
 const orderRoutes = require('./src/routes/orders');
 const customerMediaRoutes = require('./src/routes/customerMedia'); // اضافه شده
+const adminRoutes = require('./src/routes/admin');
+const notificationRoutes = require('./src/routes/notification');
 
 const swaggerUi = require("swagger-ui-express");
 const { swaggerSpec } = require("./src/config/swagger");
@@ -50,9 +53,12 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 // Routes
 app.use("/api/v1/auth", authRoutes);
 app.use('/api/v1/orders', orderRoutes);
-app.use('/api/v1/orders', customerMediaRoutes); // اضافه شده
+app.use('/api/v1/orders', customerMediaRoutes);
+app.use("/api/admin", adminRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
 
+seed();
 module.exports = app;

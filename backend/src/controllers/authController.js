@@ -97,10 +97,8 @@ const auth = asyncHandler(async (req, res) => {
 
 const logout = asyncHandler(async (req, res) => {
   try {
-    // حذف refresh token مربوط به این دستگاه
     await authService.revokeUserRefreshTokens(req.user.id, false);
 
-    // اضافه کردن access token به blacklist
     await authService.addToBlacklist(req.token);
 
     console.log(
@@ -115,10 +113,8 @@ const logout = asyncHandler(async (req, res) => {
 
 const logoutAll = asyncHandler(async (req, res) => {
   try {
-    // حذف همه refresh token های کاربر
     await authService.revokeUserRefreshTokens(req.user.id, true);
 
-    // اضافه کردن access token فعلی به blacklist
     await authService.addToBlacklist(req.token);
 
     console.log(
@@ -135,10 +131,8 @@ const logoutAll = asyncHandler(async (req, res) => {
 
 const refreshToken = asyncHandler(async (req, res) => {
   try {
-    // حذف refresh token قدیمی
     await authService.revokeRefreshToken(req.refreshTokenRecord.id);
 
-    // ایجاد توکن‌های جدید
     const tokens = await authService.generateAuthTokens(req.user);
 
     console.log(
@@ -268,7 +262,6 @@ const changePassword = asyncHandler(async (req, res) => {
 
   await authService.updatePassword(req.user.id, newPassword);
 
-  // حذف همه refresh token ها بعد از تغییر رمز
   await authService.revokeUserRefreshTokens(req.user.id, true);
 
   console.log(
