@@ -26,5 +26,5 @@ export interface PasswordStrength {
 export type UserRole = "ADMIN" | "STAFF" | "CUSTOMER";
 export interface PageAccess {
   path: string;
- allowedRoles: UserRole[];
+  allowedRoles: UserRole[];
 }

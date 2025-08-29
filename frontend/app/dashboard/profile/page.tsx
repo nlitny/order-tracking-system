@@ -43,7 +43,7 @@ export default function ProfilePage() {
         mb={4}
       >
         <ProfileImageUpload
-          src={user.profileImage}
+          src={user.profilePicture}
           alt={`${user.firstName} ${user.lastName}`}
           uploading={uploadingImage}
           onImageSelect={uploadProfileImage}

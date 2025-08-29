@@ -55,6 +55,18 @@ const ORDER_STATUS_COLORS = {
   ON_HOLD: { color: "#9c27b0", bg: "#f3e5f5", label: "On Hold" },
 };
 
+// Priority order for sorting
+const STATUS_PRIORITY = {
+  IN_PROGRESS: 1,
+  ON_HOLD: 2,
+  PENDING: 3,
+  COMPLETED: 4,
+  CANCELLED: 5,
+};
+
+// Items per page options
+const ITEMS_PER_PAGE_OPTIONS = [10, 20, 30, 50, 100];
+
 export default function OrdersPage() {
   const router = useRouter();
   const theme = useTheme();
@@ -67,7 +79,7 @@ export default function OrdersPage() {
 
   const [filters, setFilters] = useState<OrderFilters>({
     page: 1,
-    limit: 10,
+    limit: 30,
     status: "",
     search: "",
   });
@@ -78,17 +90,36 @@ export default function OrdersPage() {
     totalItems: 0,
     hasNext: false,
     hasPrev: false,
-    limit: 10,
+    limit: 30,
   });
 
   const [searchInput, setSearchInput] = useState("");
+
+  // Sort orders by status priority
+  const sortOrdersByStatus = useCallback((orders: OrderItem[]) => {
+    return [...orders].sort((a, b) => {
+      const priorityA = STATUS_PRIORITY[a.status] || 999;
+      const priorityB = STATUS_PRIORITY[b.status] || 999;
+
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+      }
+
+      // If same priority, sort by creation date (newest first)
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+  }, []);
 
   const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const response = await orderService.getOrders(filters);
-      setOrders(response.data.orders);
+
+      // Sort the orders by status priority
+      const sortedOrders = sortOrdersByStatus(response.data.orders);
+
+      setOrders(sortedOrders);
       setPagination(response.data.pagination);
     } catch (err: any) {
       setError(err.message);
@@ -96,7 +127,7 @@ export default function OrdersPage() {
     } finally {
       setLoading(false);
     }
-  }, [filters, showErrorToast]);
+  }, [filters, showErrorToast, sortOrdersByStatus]);
 
   useEffect(() => {
     fetchOrders();
@@ -133,6 +164,14 @@ export default function OrdersPage() {
     },
     []
   );
+
+  const handleItemsPerPageChange = useCallback((limit: number) => {
+    setFilters((prev) => ({
+      ...prev,
+      page: 1,
+      limit,
+    }));
+  }, []);
 
   const handleOrderClick = useCallback(
     (orderId: string) => {
@@ -225,7 +264,10 @@ export default function OrdersPage() {
           </Box>
 
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-            <Avatar sx={{ width: 20, height: 20, fontSize: "0.75rem" }}>
+            <Avatar
+              sx={{ width: 20, height: 20, fontSize: "0.75rem" }}
+              src={order.customer?.profilePicture || ""}
+            >
               {order.customer.firstName.charAt(0)}
             </Avatar>
             <Typography
@@ -359,7 +401,7 @@ export default function OrdersPage() {
         <CardContent sx={{ p: { xs: 2, md: 3 } }}>
           <Grid container spacing={2} alignItems="center">
             {/* Search */}
-            <Grid size={{ xs: 12, md: 6 }}>
+            <Grid size={{ xs: 12, md: 5 }}>
               <TextField
                 placeholder="Search orders by title, order number..."
                 value={searchInput}
@@ -390,7 +432,7 @@ export default function OrdersPage() {
             </Grid>
 
             {/* Status Filter */}
-            <Grid size={{ xs: 12, md: 3 }}>
+            <Grid size={{ xs: 12, md: 2.5 }}>
               <FormControl fullWidth size="medium">
                 <InputLabel>Status Filter</InputLabel>
                 <Select
@@ -413,8 +455,31 @@ export default function OrdersPage() {
               </FormControl>
             </Grid>
 
+            {/* Items per page */}
+            <Grid size={{ xs: 12, md: 2 }}>
+              <FormControl fullWidth size="medium">
+                <InputLabel>Items per page</InputLabel>
+                <Select
+                  value={filters.limit}
+                  label="Items per page"
+                  onChange={(e) =>
+                    handleItemsPerPageChange(Number(e.target.value))
+                  }
+                  sx={{
+                    borderRadius: 1,
+                  }}
+                >
+                  {ITEMS_PER_PAGE_OPTIONS.map((option) => (
+                    <MenuItem key={option} value={option}>
+                      {option} items
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+
             {/* Actions */}
-            <Grid size={{ xs: 12, md: 3 }}>
+            <Grid size={{ xs: 12, md: 2.5 }}>
               <Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}>
                 <Button
                   variant="outlined"
@@ -537,6 +602,28 @@ export default function OrdersPage() {
       ) : (
         <Fade in timeout={300}>
           <Box>
+            {/* Status Priority Info */}
+            <Paper
+              elevation={0}
+              sx={{
+                p: 2,
+                mb: 3,
+                borderRadius: 1,
+                bgcolor: "info.50",
+                border: "1px solid",
+                borderColor: "info.200",
+              }}
+            >
+              <Typography
+                variant="body2"
+                color="info.main"
+                sx={{ fontWeight: 500 }}
+              >
+                📋 Orders are automatically sorted by priority: In Progress → On
+                Hold → Pending → Completed → Cancelled
+              </Typography>
+            </Paper>
+
             <Grid container spacing={3}>
               {orders.map((order) => (
                 <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={order.id}>
@@ -583,7 +670,7 @@ export default function OrdersPage() {
               pagination.currentPage * pagination.limit,
               pagination.totalItems
             )}{" "}
-            of {pagination.totalItems} orders
+            of {pagination.totalItems} orders • {filters.limit} items per page
           </Typography>
         </Paper>
       )}

@@ -14,6 +14,7 @@ interface UserWithAuth {
   accessToken: string;
   refreshToken: string;
   accessTokenExpires: number;
+  profilePicture?: string;
   refreshTokenExpires: number;
   phone?: string;
 }
@@ -28,8 +29,10 @@ interface AuthSuccessResponse {
       email: string;
       firstName: string;
       lastName: string;
+      phone?: string;
       role: UserRole;
       isActive: boolean;
+      profilePicture?: string;
     };
     tokens: {
       accessToken: string;
@@ -137,6 +140,8 @@ export const authOptions: NextAuthOptions = {
             lastName: user.lastName,
             role: user.role,
             isActive: user.isActive,
+            profilePicture: user.profilePicture,
+            phone: user.phone,
             accessToken: tokens.accessToken,
             refreshToken: tokens.refreshToken,
             accessTokenExpires: parseExpirationTime(
@@ -186,6 +191,7 @@ export const authOptions: NextAuthOptions = {
           lastName: authUser.lastName,
           role: authUser.role,
           phone: authUser.phone || null,
+          profilePicture: authUser.profilePicture || null,
           isActive: authUser.isActive,
           accessToken: authUser.accessToken,
           refreshToken: authUser.refreshToken,
@@ -279,6 +285,7 @@ export const authOptions: NextAuthOptions = {
           firstName: token.firstName as string,
           lastName: token.lastName as string,
           role: token.role as UserRole,
+          profilePicture: token.profilePicture as string,
           phone: token.phone as string,
           isActive: token.isActive as boolean,
           accessToken: token.accessToken as string,

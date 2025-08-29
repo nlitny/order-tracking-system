@@ -1,4 +1,3 @@
-// types/next-auth.d.ts
 import NextAuth from "next-auth";
 
 declare module "next-auth" {
@@ -11,6 +10,7 @@ declare module "next-auth" {
       role: string;
       isActive: boolean;
       accessToken: string;
+      profilePicture?: string | null;
       refreshToken: string;
       phone?: string | null;
     };
@@ -27,6 +27,7 @@ declare module "next-auth" {
     accessToken: string;
     refreshToken: string;
     accessTokenExpires: number;
+    profilePicture?: string | null;
     refreshTokenExpires: number;
     phone?: string | null;
   }
@@ -46,5 +47,6 @@ declare module "next-auth/jwt" {
     refreshTokenExpires: number;
     error?: string;
     phone?: string | null;
+    profilePicture?: string | null;
   }
 }

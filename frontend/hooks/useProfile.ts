@@ -122,10 +122,10 @@ export const useProfile = () => {
 
       try {
         const formData = new FormData();
-        formData.append("image", file);
+        formData.append("profilePicture", file);
 
-        const response = await axiosInstance.put(
-          "/auth/profile-image",
+        const response = await axiosInstance.post(
+          "/auth/profile/picture",
           formData,
           {
             headers: {
@@ -133,17 +133,20 @@ export const useProfile = () => {
             },
           }
         );
+        console.log(response);
 
-        const result = response.data;
+        const result = response.data.data.user;
         showSuccessToast("Profile image updated successfully");
-
+        
         updateUser({
           ...user,
-          profileImage: result.profileImage,
+          profilePicture: result.profilePicture,
         });
 
         return true;
       } catch (error) {
+        console.log(error);
+
         const axiosError = error as AxiosError<{ message?: string }>;
         const errorMessage =
           axiosError.response?.data?.message || "Failed to upload image";

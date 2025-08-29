@@ -28,6 +28,8 @@ import {
   MoreVert as MoreVertIcon,
 } from "@mui/icons-material";
 import ProfileMenu from "./ProfileMenu";
+import { useUser } from "@/context/UserContext";
+import { useRouter } from "next/navigation";
 
 interface AppBarComponentProps {
   onSidebarToggle: () => void;
@@ -56,8 +58,8 @@ export default function AppBarComponent({
   const [moreAnchorEl, setMoreAnchorEl] = React.useState<null | HTMLElement>(
     null
   );
-
-  // ریسپانسیو بریک پوینت‌ها
+  const { user } = useUser();
+  const router = useRouter();
   const isXs = useMediaQuery(theme.breakpoints.down("sm"));
 
   const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -73,32 +75,18 @@ export default function AppBarComponent({
     setMoreAnchorEl(null);
   };
 
-  // 🔥 اضافه کردن handler functions جدید
   const handleProfileClose = () => {
     setProfileAnchorEl(null);
   };
 
   const handleMyProfileClick = () => {
-    console.log("My Profile clicked");
-    // Navigate to profile page
-    // router.push('/profile');
+    router.push("/dashboard/profile");
   };
 
   const handleSettingsClick = () => {
-    console.log("Settings clicked");
-    // Navigate to settings page
-    // router.push('/settings');
+    router.push("/dashboard/profile");
   };
 
-  const handleLogoutClick = () => {
-    console.log("Logout clicked");
-    // Handle logout logic
-    // Example:
-    // localStorage.removeItem('authToken');
-    // router.push('/login');
-  };
-
-  // محاسبه عرض و margin صحیح AppBar
   const getAppBarStyles = () => {
     if (isMobile) {
       return {
@@ -121,7 +109,6 @@ export default function AppBarComponent({
     };
   };
 
-  // رنگ‌بندی مشابه sidebar
   const appBarStyles = {
     background: `linear-gradient(145deg, 
       ${theme.palette.background.paper} 0%, 
@@ -141,7 +128,6 @@ export default function AppBarComponent({
         sx={{
           ...getAppBarStyles(),
           height: { xs: 56, sm: 64, md: appBarHeight },
-        //   zIndex: theme.zIndex.drawer + 1,
           transition: theme.transitions.create(["width", "margin-left"], {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.leavingScreen,
@@ -160,7 +146,6 @@ export default function AppBarComponent({
             justifyContent: "space-between",
           }}
         >
-          {/* Left Section - Menu Button & Title */}
           <Box
             sx={{
               display: "flex",
@@ -168,7 +153,6 @@ export default function AppBarComponent({
               gap: { xs: 1, sm: 2 },
             }}
           >
-            {/* Menu Button */}
             <Tooltip title="Toggle Sidebar">
               <IconButton
                 color="inherit"
@@ -192,29 +176,7 @@ export default function AppBarComponent({
                 <MenuIcon sx={{ fontSize: { xs: 20, sm: 22, md: 24 } }} />
               </IconButton>
             </Tooltip>
-
-            {/* Logo/Title */}
-            {/* <Typography
-              variant={isXs ? "h6" : "h5"}
-              noWrap
-              component="div"
-              sx={{
-                fontWeight: 700,
-                color: theme.palette.text.primary,
-                fontSize: { xs: "1.1rem", sm: "1.25rem", md: "1.5rem" },
-                background: `linear-gradient(45deg, 
-                  ${theme.palette.primary.main} 30%, 
-                  ${theme.palette.secondary.main} 90%)`,
-                backgroundClip: "text",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-              }}
-            >
-              Customer Dashboard
-            </Typography> */}
           </Box>
-
-          {/* Right Section - Actions */}
           <Box
             sx={{
               display: "flex",
@@ -222,10 +184,8 @@ export default function AppBarComponent({
               gap: { xs: 0.5, sm: 1 },
             }}
           >
-            {/* Desktop Actions */}
             {!isXs && (
               <>
-                {/* Notifications */}
                 <Tooltip title="Notifications">
                   <IconButton
                     color="inherit"
@@ -266,8 +226,6 @@ export default function AppBarComponent({
                 </Tooltip>
               </>
             )}
-
-            {/* Profile Menu */}
             <Tooltip title="Account Settings">
               <IconButton
                 onClick={handleProfileMenuOpen}
@@ -298,13 +256,12 @@ export default function AppBarComponent({
                       boxShadow: theme.shadows[4],
                     },
                   }}
+                  src={user?.profilePicture}
                 >
-                  JD
+                  {user?.firstName?.charAt(0) + " " + user?.lastName?.charAt(0)}
                 </Avatar>
               </IconButton>
             </Tooltip>
-
-            {/* Mobile More Menu */}
             {isXs && (
               <Tooltip title="More Options">
                 <IconButton
@@ -326,8 +283,6 @@ export default function AppBarComponent({
           </Box>
         </Toolbar>
       </AppBar>
-
-      {/* Profile Menu Component */}
       <ProfileMenu
         anchorEl={profileAnchorEl}
         open={Boolean(profileAnchorEl)}
@@ -336,8 +291,6 @@ export default function AppBarComponent({
         onProfileClick={handleMyProfileClick}
         onSettingsClick={handleSettingsClick}
       />
-
-      {/* Mobile More Options Menu */}
       <Menu
         anchorEl={moreAnchorEl}
         open={Boolean(moreAnchorEl)}

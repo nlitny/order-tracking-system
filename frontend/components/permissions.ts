@@ -12,16 +12,6 @@ export const PAGE_PERMISSIONS: PageAccess[] = [
     allowedRoles: ["ADMIN"],
   },
 
-  // Staff routes
-  {
-    path: "/dashboard/staff",
-    allowedRoles: ["ADMIN", "STAFF"],
-  },
-  {
-    path: "/dashboard/staff/reports",
-    allowedRoles: ["ADMIN", "STAFF"],
-  },
-
   // Orders routes
   {
     path: "/dashboard/orders",
@@ -29,7 +19,7 @@ export const PAGE_PERMISSIONS: PageAccess[] = [
   },
   {
     path: "/dashboard/orders/new",
-    allowedRoles: ["ADMIN", "CUSTOMER"],
+    allowedRoles: ["CUSTOMER"],
   },
   {
     path: "/dashboard/orders/[id]",
@@ -45,6 +35,10 @@ export const PAGE_PERMISSIONS: PageAccess[] = [
   // Dashboard main
   {
     path: "/dashboard",
+    allowedRoles: ["ADMIN", "STAFF", "CUSTOMER"],
+  },
+  {
+    path: "/dashboard/notifications",
     allowedRoles: ["ADMIN", "STAFF", "CUSTOMER"],
   },
 ];

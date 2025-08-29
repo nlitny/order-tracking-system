@@ -22,7 +22,7 @@ export interface UserData {
   phone?: string | null;
   role: UserRole;
   isActive: boolean;
-  profileImage?: string;
+  profilePicture?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -119,7 +119,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       phone: userData.phone,
       role: userData.role,
       isActive: userData.isActive,
-      profileImage: userData.profileImage || userData.profile_image,
+      profilePicture: userData.profilePicture || userData.profilePicture,
       createdAt: userData.createdAt,
       updatedAt: userData.updatedAt,
     };
@@ -263,6 +263,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
           lastName: user.lastName,
           role: user.role,
           isActive: user.isActive,
+          profilePicture: user.profilePicture,
+          phone: user.phone,
         },
       });
 
@@ -482,8 +484,8 @@ export const useUserData = () => {
     hasRole: (role: string) => user?.role === role,
     hasAnyRole: (roles: string[]) => roles.includes(user?.role || ""),
     isActiveUser: user?.isActive === true,
-    hasProfileImage: !!user?.profileImage,
-    profileImageUrl: user?.profileImage || null,
+    hasProfileImage: !!user?.profilePicture,
+    profileImageUrl: user?.profilePicture || null,
   };
 };
 

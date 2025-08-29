@@ -1,36 +1,36 @@
-
-const { PrismaClient } = require('@prisma/client');
+const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
 class NotificationService {
   async createOrderNotifications(order, customerId) {
     try {
       const notifications = [];
-      
+
       const customerNotification = await prisma.notification.create({
         data: {
           userId: customerId,
           orderId: order.id,
-          type: 'ORDER_UPDATE',
-          title: 'Order Registered Successfully',
-          message: 'Your order has been registered and is awaiting staff approval.',
-          sentAt: new Date()
-        }
+          type: "ORDER_UPDATE",
+          title: "Order Registered Successfully",
+          message:
+            "Your order has been registered and is awaiting staff approval.",
+          sentAt: new Date(),
+        },
       });
       notifications.push(customerNotification);
 
       const adminsAndStaff = await prisma.user.findMany({
         where: {
           role: {
-            in: ['ADMIN', 'STAFF']
+            in: ["ADMIN", "STAFF"],
           },
-          isActive: true
+          isActive: true,
         },
         select: {
           id: true,
           firstName: true,
-          lastName: true
-        }
+          lastName: true,
+        },
       });
 
       for (const user of adminsAndStaff) {
@@ -38,43 +38,45 @@ class NotificationService {
           data: {
             userId: user.id,
             orderId: order.id,
-            type: 'ORDER_UPDATE',
-            title: 'New Order Received',
+            type: "ORDER_UPDATE",
+            title: "New Order Received",
             message: `A new order has been registered by ${order.customer.firstName} ${order.customer.lastName}.`,
-            sentAt: new Date()
-          }
+            sentAt: new Date(),
+          },
         });
         notifications.push(adminNotification);
       }
 
       return notifications;
     } catch (error) {
-      console.error('Error creating order notifications:', error);
+      console.error("Error creating order notifications:", error);
       throw error;
     }
   }
 
   async createStatusUpdateNotification(order, newStatus) {
     try {
-      let title = '';
-      let message = '';
+      let title = "";
+      let message = "";
 
       switch (newStatus) {
-        case 'IN_PROGRESS':
-          title = 'Order Approved';
-          message = 'Your order has been approved and is currently in progress.';
+        case "IN_PROGRESS":
+          title = "Order Approved";
+          message =
+            "Your order has been approved and is currently in progress.";
           break;
-        case 'ON_HOLD':
-          title = 'Order On Hold';
-          message = 'Your order is in the processing queue.';
+        case "ON_HOLD":
+          title = "Order On Hold";
+          message = "Your order is in the processing queue.";
           break;
-        case 'CANCELLED':
-          title = 'Order Cancelled';
-          message = 'Unfortunately, your order has been cancelled. Please contact support for follow-up.';
+        case "CANCELLED":
+          title = "Order Cancelled";
+          message =
+            "Unfortunately, your order has been cancelled. Please contact support for follow-up.";
           break;
-        case 'COMPLETED':
-          title = 'Order Completed';
-          message = 'Your order has been completed successfully.';
+        case "COMPLETED":
+          title = "Order Completed";
+          message = "Your order has been completed successfully.";
           break;
         default:
           return null;
@@ -84,16 +86,16 @@ class NotificationService {
         data: {
           userId: order.customerId,
           orderId: order.id,
-          type: newStatus === 'COMPLETED' ? 'ORDER_COMPLETED' : 'ORDER_UPDATE',
+          type: newStatus === "COMPLETED" ? "ORDER_COMPLETED" : "ORDER_UPDATE",
           title,
           message,
-          sentAt: new Date()
-        }
+          sentAt: new Date(),
+        },
       });
 
       return notification;
     } catch (error) {
-      console.error('Error creating status update notification:', error);
+      console.error("Error creating status update notification:", error);
       throw error;
     }
   }
@@ -102,26 +104,29 @@ class NotificationService {
     try {
       const skip = (page - 1) * limit;
 
+      const whereCondition = {
+        userId,
+        isRead: false,
+      };
+
       const [notifications, total] = await Promise.all([
         prisma.notification.findMany({
-          where: { userId },
+          where: whereCondition,
           include: {
             order: {
               select: {
                 id: true,
                 orderNumber: true,
                 title: true,
-                status: true
-              }
-            }
+                status: true,
+              },
+            },
           },
-          orderBy: { createdAt: 'desc' },
+          orderBy: { createdAt: "desc" },
           skip,
-          take: limit
+          take: limit,
         }),
-        prisma.notification.count({
-          where: { userId }
-        })
+        prisma.notification.count({ where: whereCondition }),
       ]);
 
       return {
@@ -131,11 +136,11 @@ class NotificationService {
           totalPages: Math.ceil(total / limit),
           totalItems: total,
           hasNextPage: page < Math.ceil(total / limit),
-          hasPrevPage: page > 1
-        }
+          hasPrevPage: page > 1,
+        },
       };
     } catch (error) {
-      console.error('Error fetching user notifications:', error);
+      console.error("Error fetching user notifications:", error);
       throw error;
     }
   }
@@ -145,22 +150,22 @@ class NotificationService {
       const notification = await prisma.notification.findFirst({
         where: {
           id: notificationId,
-          userId
-        }
+          userId,
+        },
       });
 
       if (!notification) {
-        throw new Error('Notification not found or access denied');
+        throw new Error("Notification not found or access denied");
       }
 
       const updatedNotification = await prisma.notification.update({
         where: { id: notificationId },
-        data: { isRead: true }
+        data: { isRead: true },
       });
 
       return updatedNotification;
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      console.error("Error marking notification as read:", error);
       throw error;
     }
   }
@@ -170,12 +175,12 @@ class NotificationService {
       const count = await prisma.notification.count({
         where: {
           userId,
-          isRead: false
-        }
+          isRead: false,
+        },
       });
       return count;
     } catch (error) {
-      console.error('Error getting unread count:', error);
+      console.error("Error getting unread count:", error);
       throw error;
     }
   }

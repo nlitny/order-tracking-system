@@ -1,4 +1,3 @@
-// types/order.ts - اضافه کردن types جدید
 export interface OrderFormData {
   title: string;
   description: string;
@@ -22,7 +21,6 @@ export interface FormErrors {
   attachments?: string;
 }
 
-// New types for order listing and details
 export interface OrderItem {
   id: string;
   orderNumber: string;
@@ -32,6 +30,7 @@ export interface OrderItem {
   customer: {
     firstName: string;
     lastName: string;
+    profilePicture?: string;
   };
 }
 
@@ -68,6 +67,7 @@ export interface OrderDetails {
     firstName: string;
     lastName: string;
     email: string;
+    profilePicture?: string;
   };
 }
 
@@ -116,6 +116,7 @@ export interface OrderResponse {
       firstName: string;
       lastName: string;
       email: string;
+      profilePicture?: string;
     };
   };
 }
