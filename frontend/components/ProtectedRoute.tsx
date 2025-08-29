@@ -12,15 +12,18 @@ import {
   Button,
 } from "@mui/material";
 import { useUser, useAuthState } from "@/context/UserContext";
+import { checkPageAccess } from "@/components/permissions";
+import { UserRole } from "@/types/types";
 
 // Types aligned with our authentication system
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRoles?: string[];
+  requiredRoles?: UserRole[]; // تغییر به UserRole[]
   fallbackPath?: string;
-  timeout?: number; // timeout in milliseconds
-  showErrorDetails?: boolean; // whether to show error details
-  allowUnauthenticated?: boolean; // for public pages that need session context
+  timeout?: number;
+  showErrorDetails?: boolean;
+  allowUnauthenticated?: boolean;
+  usePagePermissions?: boolean; // آپشن جدید برای استفاده از سیستم permissions
 }
 
 type AuthStatus =
@@ -28,7 +31,8 @@ type AuthStatus =
   | "authorized"
   | "unauthorized"
   | "error"
-  | "session_expired";
+  | "session_expired"
+  | "access_denied"; // حالت جدید برای عدم دسترسی
 
 // Enhanced Type Guard for session validation
 function isValidAuthenticatedSession(session: any): boolean {
@@ -48,10 +52,11 @@ function isValidAuthenticatedSession(session: any): boolean {
 
 // Custom Hook for Authentication Logic Management
 function useAuthProtection(
-  requiredRoles?: string[],
+  requiredRoles?: UserRole[],
   fallbackPath = "/auth",
-  timeout = 15000, // Increased timeout for better UX
-  allowUnauthenticated = false
+  timeout = 15000,
+  allowUnauthenticated = false,
+  usePagePermissions = true // به طور پیش‌فرض از سیستم permissions استفاده کند
 ) {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -78,7 +83,7 @@ function useAuthProtection(
         const url = new URL(path, window.location.origin);
 
         // Only add callback URL for login pages
-        if (path.includes("/auth") || path.includes("/auth")) {
+        if (path.includes("/auth") || path.includes("/login")) {
           url.searchParams.set("callbackUrl", pathname);
         }
 
@@ -134,6 +139,8 @@ function useAuthProtection(
           hasUser: !!user,
           hasSession: !!session,
           allowUnauthenticated,
+          usePagePermissions,
+          currentPath: pathname,
         });
 
         // Handle loading states
@@ -238,21 +245,55 @@ function useAuthProtection(
             return;
           }
 
-          // Role-based access control
-          if (requiredRoles && requiredRoles.length > 0) {
+          // Get user role
+          const userRole = user?.role || session.user.role;
+
+          // استفاده از سیستم permissions (اولویت اول)
+          if (usePagePermissions) {
+            console.log("🔐 Checking page access with permissions system:", {
+              path: pathname,
+              userRole: userRole,
+            });
+
+            const hasPageAccess = checkPageAccess(pathname, [
+              userRole as UserRole,
+            ]);
+
+            if (!hasPageAccess) {
+              console.log("❌ Access denied by permissions system");
+              setAuthStatus("access_denied");
+              setLocalLoading(false);
+
+              // ریدایرکت به صفحه مناسب بر اساس نقش کاربر
+              if (userRole === "ADMIN") {
+                router.replace("/dashboard/admin");
+              } else if (userRole === "STAFF") {
+                router.replace("/dashboard/staff");
+              } else if (userRole === "CUSTOMER") {
+                router.replace("/dashboard");
+              } else {
+                router.replace("/unauthorized");
+              }
+              return;
+            }
+
+            console.log("✅ Page access granted by permissions system");
+          }
+          // استفاده از requiredRoles (اولویت دوم)
+          else if (requiredRoles && requiredRoles.length > 0) {
             console.log("🔐 Checking role-based access:", {
               required: requiredRoles,
-              userRole: user?.role,
+              userRole: userRole,
               sessionRole: session.user.role,
             });
 
-            // Check against both user context and session for redundancy
-            const userRole = user?.role || session.user.role;
-            const hasRequiredRole = requiredRoles.includes(userRole);
+            const hasRequiredRole = requiredRoles.includes(
+              userRole as UserRole
+            );
 
             if (!hasRequiredRole) {
               console.log("❌ User doesn't have required roles");
-              setAuthStatus("unauthorized");
+              setAuthStatus("access_denied");
               setLocalLoading(false);
               router.replace("/unauthorized");
               return;
@@ -262,7 +303,7 @@ function useAuthProtection(
           }
 
           // All checks passed
-          console.log("✅ Authentication successful");
+          console.log("✅ Authentication and authorization successful");
           setAuthStatus("authorized");
           setLocalLoading(false);
           return;
@@ -305,6 +346,8 @@ function useAuthProtection(
     timeoutReached,
     shouldShowLogin,
     isInitializing,
+    usePagePermissions,
+    pathname,
   ]);
 
   // Calculate loading state
@@ -390,7 +433,13 @@ const ErrorDisplay = ({
     }}
   >
     <Alert
-      severity={authStatus === "session_expired" ? "warning" : "error"}
+      severity={
+        authStatus === "session_expired"
+          ? "warning"
+          : authStatus === "access_denied"
+          ? "info"
+          : "error"
+      }
       sx={{
         maxWidth: 600,
         width: "100%",
@@ -419,6 +468,8 @@ const ErrorDisplay = ({
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
             {authStatus === "session_expired"
               ? "Your session has expired. Please sign in again to continue."
+              : authStatus === "access_denied"
+              ? "You don't have permission to access this page."
               : "If this problem persists, please try refreshing the page or contact support."}
           </Typography>
           {authStatus === "session_expired" && (
@@ -426,7 +477,7 @@ const ErrorDisplay = ({
               <Button
                 variant="contained"
                 color="primary"
-                href="/login"
+                href="/auth"
                 size="small"
               >
                 Sign In Again
@@ -447,12 +498,14 @@ export default function ProtectedRoute({
   timeout = 15000,
   showErrorDetails = true,
   allowUnauthenticated = false,
+  usePagePermissions = true, // به طور پیش‌فرض فعال است
 }: ProtectedRouteProps) {
   const { isLoading, error, authStatus, timeoutReached } = useAuthProtection(
     requiredRoles,
     fallbackPath,
     timeout,
-    allowUnauthenticated
+    allowUnauthenticated,
+    usePagePermissions
   );
 
   // Retry function for error state
@@ -481,11 +534,16 @@ export default function ProtectedRoute({
 
     case "error":
     case "session_expired":
+    case "access_denied":
       return (
         <ErrorDisplay
-          error={error || "Authentication error occurred"}
+          error={
+            authStatus === "access_denied"
+              ? "Access Denied - You don't have permission to view this page"
+              : error || "Authentication error occurred"
+          }
           showDetails={showErrorDetails}
-          onRetry={handleRetry}
+          onRetry={authStatus !== "access_denied" ? handleRetry : undefined}
           authStatus={authStatus}
         />
       );
@@ -500,15 +558,19 @@ export default function ProtectedRoute({
   }
 }
 
-// Convenience wrapper components for common use cases
+// Enhanced convenience wrapper components
 export const AdminRoute: React.FC<{ children: React.ReactNode }> = ({
   children,
-}) => <ProtectedRoute requiredRoles={["ADMIN"]}>{children}</ProtectedRoute>;
+}) => (
+  <ProtectedRoute usePagePermissions={true} requiredRoles={["ADMIN"]}>
+    {children}
+  </ProtectedRoute>
+);
 
 export const VendorRoute: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => (
-  <ProtectedRoute requiredRoles={["VENDOR", "ADMIN"]}>
+  <ProtectedRoute usePagePermissions={true} requiredRoles={["STAFF"]}>
     {children}
   </ProtectedRoute>
 );
@@ -516,7 +578,7 @@ export const VendorRoute: React.FC<{ children: React.ReactNode }> = ({
 export const CustomerRoute: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => (
-  <ProtectedRoute requiredRoles={["CUSTOMER", "VENDOR", "ADMIN"]}>
+  <ProtectedRoute usePagePermissions={true} requiredRoles={["CUSTOMER"]}>
     {children}
   </ProtectedRoute>
 );
@@ -524,7 +586,3 @@ export const CustomerRoute: React.FC<{ children: React.ReactNode }> = ({
 export const PublicRoute: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => <ProtectedRoute allowUnauthenticated={true}>{children}</ProtectedRoute>;
-
-// Export types and utilities for external use
-export type { ProtectedRouteProps };
-export { isValidAuthenticatedSession, useAuthProtection };

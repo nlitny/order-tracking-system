@@ -1,4 +1,3 @@
-// utils/types.ts - به‌روزرسانی AuthStep
 export type AuthStep = "email" | "login" | "register";
 
 export interface AuthFormData {
@@ -22,4 +21,10 @@ export interface PasswordStrength {
   label: string;
   color: string;
   suggestions: string[];
+}
+
+export type UserRole = "ADMIN" | "STAFF" | "CUSTOMER";
+export interface PageAccess {
+  path: string;
+ allowedRoles: UserRole[];
 }

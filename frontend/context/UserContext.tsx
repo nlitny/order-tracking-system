@@ -11,6 +11,7 @@ import React, {
 } from "react";
 import { useSession } from "next-auth/react";
 import axiosInstance from "@/lib/axios/csrAxios";
+import { UserRole } from "@/types/types";
 
 // Essential User Data Types - فقط اطلاعات ضروری
 export interface UserData {
@@ -19,7 +20,7 @@ export interface UserData {
   firstName: string;
   lastName: string;
   phone?: string | null;
-  role: string;
+  role: UserRole;
   isActive: boolean;
   profileImage?: string;
   createdAt?: string;

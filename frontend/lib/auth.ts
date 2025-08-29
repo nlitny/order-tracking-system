@@ -2,13 +2,14 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import axios from "axios";
+import { UserRole } from "@/types/types";
 
 interface UserWithAuth {
   id: string;
   email: string;
   firstName: string;
   lastName: string;
-  role: string;
+  role: UserRole;
   isActive: boolean;
   accessToken: string;
   refreshToken: string;
@@ -27,7 +28,7 @@ interface AuthSuccessResponse {
       email: string;
       firstName: string;
       lastName: string;
-      role: string;
+      role: UserRole;
       isActive: boolean;
     };
     tokens: {
@@ -222,14 +223,15 @@ export const authOptions: NextAuthOptions = {
 
         const apiUrl =
           process.env.NEXT_PUBLIC_API_BASEURL || "http://localhost:5000";
-        console.log("CUrent access token:", token.accessToken);
+        console.log("Current refresh token:", token.refreshToken);
 
         const { data } = await axios.post<RefreshTokenResponse>(
           `${apiUrl}/api/v1/auth/refresh-token`,
-          {},
+          {
+            refreshToken: token.refreshToken,
+          },
           {
             headers: {
-              Authorization: `Bearer ${token.accessToken}`,
               "Content-Type": "application/json",
             },
             timeout: 10000,
@@ -276,7 +278,7 @@ export const authOptions: NextAuthOptions = {
           email: token.email as string,
           firstName: token.firstName as string,
           lastName: token.lastName as string,
-          role: token.role as string,
+          role: token.role as UserRole,
           phone: token.phone as string,
           isActive: token.isActive as boolean,
           accessToken: token.accessToken as string,

@@ -13,12 +13,15 @@ import {
   Box,
   useTheme,
   alpha,
+  Skeleton,
 } from "@mui/material";
 import {
   ExpandLess,
   ExpandMore,
   Circle as CircleIcon,
   ChevronRight as ChevronRightIcon,
+  NotificationAdd,
+  NotificationAddSharp,
 } from "@mui/icons-material";
 import Link from "next/link";
 import { MenuItem } from "@/types/dashboardLayout";
@@ -33,7 +36,17 @@ import {
   Receipt as ReceiptIcon,
   Support as SupportIcon,
   AdminPanelSettings as AdminIcon,
+  PersonAdd as PersonAddIcon,
+  Assessment as AssessmentIcon,
+  Store as StoreIcon,
+  BusinessCenter as BusinessCenterIcon,
+  AccountBox as AccountBoxIcon,
+  FormatListNumbered as FormatListNumberedIcon,
+  FactCheck as FactCheckIcon,
 } from "@mui/icons-material";
+import { usePageAccess } from "@/hooks/usePageAccess";
+import { UserRole } from "@/types/types";
+
 interface MenuItemsProps {
   collapsed: boolean;
   isMobile: boolean;
@@ -47,6 +60,48 @@ interface MenuItemsProps {
   isParentActive: (children: MenuItem[]) => boolean;
 }
 
+// 🔥 Extended MenuItem with roles
+interface MenuItemWithRoles extends MenuItem {
+  roles?: UserRole[]; // اگر تعریف نشود، همه role ها دسترسی دارند
+  children?: MenuItemWithRoles[];
+}
+
+// 🔥 Skeleton Component
+const MenuItemSkeleton = ({
+  collapsed,
+  isMobile,
+}: {
+  collapsed: boolean;
+  isMobile: boolean;
+}) => (
+  <ListItem disablePadding sx={{ mb: 0.5 }}>
+    <ListItemButton
+      disabled
+      sx={{
+        borderRadius: 0.5,
+        minHeight: 48,
+        mx: !collapsed || isMobile ? 2 : 0,
+        justifyContent: collapsed && !isMobile ? "center" : "flex-start",
+        px: collapsed && !isMobile ? 0 : 2,
+      }}
+    >
+      <ListItemIcon
+        sx={{
+          minWidth: collapsed && !isMobile ? 0 : 40,
+          justifyContent: "center",
+        }}
+      >
+        <Skeleton variant="circular" width={24} height={24} />
+      </ListItemIcon>
+      {(!collapsed || isMobile) && (
+        <ListItemText
+          primary={<Skeleton variant="text" width="60%" height={20} />}
+        />
+      )}
+    </ListItemButton>
+  </ListItem>
+);
+
 export default function MenuItems({
   collapsed,
   isMobile,
@@ -57,69 +112,128 @@ export default function MenuItems({
   isParentActive,
 }: MenuItemsProps) {
   const theme = useTheme();
+  const { userRoles, isLoading, shouldWait } = usePageAccess();
 
-  const menuItems: MenuItem[] = [
+  // Check user roles
+  const hasRole = (roles: UserRole[]): boolean => {
+    return roles.some((role) => userRoles.includes(role));
+  };
+
+  // 🔥 Menu items with role-based access
+  const menuItems: MenuItemWithRoles[] = [
     {
       id: "dashboard",
       title: "Dashboard",
       icon: <DashboardIcon />,
       path: "/dashboard",
+      // همه role ها دسترسی دارند (roles تعریف نشده)
     },
     {
-      id: "analytics",
-      title: "Analytics",
-      icon: <AnalyticsIcon />,
-      path: "/dashboard/analytics",
-      badge: 3,
-    },
-    {
-      id: "ecommerce",
-      title: "E-Commerce",
-      icon: <ShoppingCartIcon />,
+      id: "orders",
+      title: "Orders",
+      icon: <FactCheckIcon />,
+      roles: ["CUSTOMER"],
       children: [
         {
-          id: "products",
-          title: "Products",
-          icon: <InventoryIcon />,
-          path: "/dashboard/products",
-        },
-        {
-          id: "orders",
-          title: "Orders",
+          id: "orderslist",
+          title: "Orders List",
           icon: <ReceiptIcon />,
           path: "/dashboard/orders",
           badge: 12,
+          roles: ["CUSTOMER"],
         },
         {
-          id: "customers",
-          title: "Customers",
+          id: "neworder",
+          title: "Create New Order",
           icon: <PeopleIcon />,
-          path: "/dashboard/customers",
+          path: "/dashboard/orders/new",
+          roles: ["CUSTOMER"],
         },
       ],
     },
     {
-      id: "users",
-      title: "User Management",
-      icon: <AdminIcon />,
-      path: "/dashboard/users",
+      id: "notifications",
+      title: "Notifications",
+      icon: <NotificationAddSharp />,
+      path: "/dashboard/notifications",
+      roles: ["ADMIN", "STAFF", "CUSTOMER"], // فقط ADMIN و STAFF
     },
     {
-      id: "support",
-      title: "Support",
-      icon: <SupportIcon />,
-      path: "/dashboard/support",
-    },
-    {
-      id: "settings",
-      title: "Settings",
-      icon: <SettingsIcon />,
-      path: "/dashboard/settings",
+      id: "profile",
+      title: "Profile",
+      icon: <AccountBoxIcon />,
+      path: "/dashboard/profile",
+      roles: ["ADMIN", "STAFF", "CUSTOMER"], // فقط ADMIN و STAFF
     },
   ];
+
+  // 🔥 Filter menu items based on user roles
+  const filterMenuItems = (items: MenuItemWithRoles[]): MenuItemWithRoles[] => {
+    return items.filter((item) => {
+      // اگر roles تعریف نشده باشد، همه دسترسی دارند
+      if (!item.roles || item.roles.length === 0) {
+        return true;
+      }
+
+      // بررسی دسترسی کاربر
+      const hasAccess = hasRole(item.roles);
+
+      // اگر آیتم children دارد، آن‌ها را نیز فیلتر کن
+      if (hasAccess && item.children) {
+        const filteredChildren = filterMenuItems(item.children);
+        // اگر هیچ child قابل دسترسی نباشد، parent را نشان نده
+        if (filteredChildren.length === 0) {
+          return false;
+        }
+        // children فیلتر شده را به آیتم اختصاص بده
+        item.children = filteredChildren;
+      }
+
+      return hasAccess;
+    });
+  };
+
+  // 🔥 Get filtered menu items
+  const visibleMenuItems = React.useMemo(() => {
+    if (isLoading || shouldWait) {
+      return [];
+    }
+    return filterMenuItems([...menuItems]);
+  }, [userRoles, isLoading, shouldWait]);
+
+  // 🔥 Show skeleton while loading
+  if (isLoading || shouldWait) {
+    return (
+      <List sx={{ px: collapsed && !isMobile ? 1 : 0 }}>
+        {Array.from({ length: 6 }).map((_, index) => (
+          <MenuItemSkeleton
+            key={`skeleton-${index}`}
+            collapsed={collapsed}
+            isMobile={isMobile}
+          />
+        ))}
+      </List>
+    );
+  }
+
+  // 🔥 Show message if no items available
+  if (visibleMenuItems.length === 0) {
+    return (
+      <Box sx={{ p: 2, textAlign: "center" }}>
+        <ListItemText
+          primary="No menu items available"
+          primaryTypographyProps={{
+            variant: "body2",
+            color: "text.secondary",
+          }}
+        />
+      </Box>
+    );
+  }
+
   return (
     <List sx={{ px: collapsed && !isMobile ? 1 : 0 }}>
-      {menuItems.map((item) => (
+      {visibleMenuItems.map((item) => (
         <ListItem key={item.id} disablePadding sx={{ mb: 0.5 }}>
           {item.children ? (
             // Parent with children
