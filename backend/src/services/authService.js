@@ -9,9 +9,8 @@ const { generateAccessToken, generateRefreshToken } = require("../utils/jwt");
 
 const prisma = new PrismaClient();
 
-// Redis برای blacklist (اختیاری - اگر Redis ندارید از Set استفاده کنید)
 let redis;
-const tokenBlacklist = new Set(); // fallback اگر Redis نداشته باشید
+const tokenBlacklist = new Set(); 
 
 const initRedis = async () => {
   try {
@@ -206,7 +205,6 @@ const updatePassword = async (userId, newPassword) => {
   });
 };
 
-// بهبود یافته: ذخیره refresh token در دیتابیس
 const generateAuthTokens = async (user) => {
   const payload = {
     userId: user.id,
@@ -217,7 +215,6 @@ const generateAuthTokens = async (user) => {
   const accessToken = generateAccessToken(payload);
   const refreshToken = generateRefreshToken(payload);
 
-  // محدود کردن تعداد active refresh tokens
   const activeTokensCount = await prisma.refreshToken.count({
     where: {
       userId: user.id,
@@ -226,7 +223,6 @@ const generateAuthTokens = async (user) => {
     },
   });
 
-  // اگر بیش از 5 دستگاه active است، قدیمی ترین را حذف کن
   if (activeTokensCount >= 5) {
     const oldestToken = await prisma.refreshToken.findFirst({
       where: {
@@ -244,8 +240,7 @@ const generateAuthTokens = async (user) => {
     }
   }
 
-  // ذخیره refresh token جدید
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 روز
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
 
   await prisma.refreshToken.create({
     data: {
@@ -263,16 +258,13 @@ const generateAuthTokens = async (user) => {
   };
 };
 
-// حذف refresh token های کاربر
 const revokeUserRefreshTokens = async (userId, all = false) => {
   if (all) {
-    // حذف همه refresh token های کاربر
     await prisma.refreshToken.updateMany({
       where: { userId },
       data: { isRevoked: true },
     });
   } else {
-    // حذف token های منقضی شده
     await prisma.refreshToken.updateMany({
       where: {
         userId,
@@ -283,7 +275,6 @@ const revokeUserRefreshTokens = async (userId, all = false) => {
   }
 };
 
-// حذف یک refresh token خاص
 const revokeRefreshToken = async (tokenId) => {
   await prisma.refreshToken.update({
     where: { id: tokenId },
@@ -300,7 +291,6 @@ const verifyPassword = async (plainPassword, hashedPassword) => {
   return await bcrypt.compare(plainPassword, hashedPassword);
 };
 
-// بهبود blacklist با Redis
 const addToBlacklist = async (token) => {
   try {
     if (redis) {
@@ -314,14 +304,12 @@ const addToBlacklist = async (token) => {
     } else {
       tokenBlacklist.add(token);
 
-      // حذف خودکار از memory بعد از 15 دقیقه
       setTimeout(() => {
         tokenBlacklist.delete(token);
       }, 15 * 60 * 1000);
     }
   } catch (error) {
     console.error("Error adding token to blacklist:", error);
-    // fallback to memory
     tokenBlacklist.add(token);
   }
 };

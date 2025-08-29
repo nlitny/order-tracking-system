@@ -1,16 +1,16 @@
 const { PrismaClient } = require('@prisma/client');
+const notificationService = require('./notificationService');
 const prisma = new PrismaClient();
 const AppError = require('../utils/AppError');
 
 class OrderService {
-
   async generateOrderNumber() {
     const date = new Date();
     const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
-    
+
     const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
     const endOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
-    
+
     const todayOrdersCount = await prisma.order.count({
       where: {
         createdAt: {
@@ -19,11 +19,10 @@ class OrderService {
         }
       }
     });
-    
+
     const sequence = String(todayOrdersCount + 1).padStart(5, '0');
     return `ORD-${dateStr}-${sequence}`;
   }
-
 
   async createOrder(orderData, customerId) {
     try {
@@ -71,6 +70,9 @@ class OrderService {
         return order;
       });
 
+      // ارسال اعلان‌ها پس از ساخت موفقیت‌آمیز order
+      await notificationService.createOrderNotifications(result, customerId);
+
       return result;
     } catch (error) {
       console.error('Error creating order:', error);
@@ -78,6 +80,68 @@ class OrderService {
         throw new AppError('Duplicate order number', 400);
       }
       throw new AppError('Error creating order', 500);
+    }
+  }
+
+  async updateOrderStatus(orderId, newStatus, adminId) {
+    try {
+      const existingOrder = await prisma.order.findUnique({
+        where: { id: orderId },
+        include: {
+          customer: {
+            select: { id: true, firstName: true, lastName: true, email: true }
+          }
+        }
+      });
+
+      if (!existingOrder) {
+        throw new AppError("Order not found", 404);
+      }
+
+      const validStatuses = ["PENDING", "IN_PROGRESS", "COMPLETED", "CANCELLED", "ON_HOLD"];
+      if (!validStatuses.includes(newStatus)) {
+        throw new AppError("Invalid status value", 400);
+      }
+
+      const result = await prisma.$transaction(async (tx) => {
+        const updatedOrder = await tx.order.update({
+          where: { id: orderId },
+          data: { 
+            status: newStatus, 
+            updatedAt: new Date(),
+            completedAt: newStatus === 'COMPLETED' ? new Date() : null
+          },
+          include: {
+            customer: {
+              select: { id: true, firstName: true, lastName: true, email: true }
+            }
+          }
+        });
+
+        await tx.orderHistory.create({
+          data: {
+            orderId,
+            status: newStatus,
+            comment: `Order status changed to ${newStatus}`,
+            changedBy: adminId,
+            metadata: { action: "ORDER_STATUS_UPDATED", updatedStatus: newStatus }
+          }
+        });
+
+        return updatedOrder;
+      });
+
+      // ارسال اعلان تغییر وضعیت (فقط برای وضعیت‌های خاص)
+      const notificationStatuses = ['IN_PROGRESS', 'ON_HOLD', 'CANCELLED', 'COMPLETED'];
+      if (notificationStatuses.includes(newStatus)) {
+        await notificationService.createStatusUpdateNotification(result, newStatus);
+      }
+
+      return result;
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      console.error("Error updating order status:", error);
+      throw new AppError("Error updating order status", 500);
     }
   }
 

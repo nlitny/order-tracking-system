@@ -1,3 +1,4 @@
+
 /**
  * @swagger
  * components:
@@ -64,6 +65,16 @@
  *         - At least one field is required for partial update
  *         - All provided fields will be updated, others remain unchanged
  *
+ *     UpdateOrderStatusRequest:
+ *       type: object
+ *       properties:
+ *         status:
+ *           type: string
+ *           enum: [PENDING, IN_PROGRESS, COMPLETED, CANCELLED, ON_HOLD]
+ *           example: "IN_PROGRESS"
+ *       required: ["status"]
+ *       additionalProperties: false
+ *
  *     OrderCustomer:
  *       type: object
  *       properties:
@@ -115,6 +126,38 @@
  *           type: string
  *           format: date-time
  *           example: "2025-08-28T14:30:00.000Z"
+ *
+ *     CustomerMediaFile:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           example: "clc9876543210"
+ *         fileName:
+ *           type: string
+ *           example: "customer_upload_1234567890.pdf"
+ *         originalName:
+ *           type: string
+ *           example: "project_requirements.pdf"
+ *         mimeType:
+ *           type: string
+ *           example: "application/pdf"
+ *         size:
+ *           type: integer
+ *           example: 1024512
+ *           description: "File size in bytes"
+ *         fileType:
+ *           type: string
+ *           enum: [IMAGE, VIDEO, DOCUMENT, AUDIO, OTHER]
+ *           example: "DOCUMENT"
+ *         description:
+ *           type: string
+ *           example: "Project requirements document"
+ *           nullable: true
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *           example: "2025-08-28T12:15:00.000Z"
  *
  *     OrderHistory:
  *       type: object
@@ -389,22 +432,16 @@
  *     description: |
  *       Creates a new order for the authenticated customer.
  *       
- *       **Order Creation Process:**
- *       1. Order is created with status 'PENDING'
- *       2. Unique order number is automatically generated (format: ORD-YYYYMMDD-XXXXX)
- *       3. Order history entry is created for tracking
- *       4. Customer can then upload media files using the customer media endpoints
+ *       **Automatic Notification System:**
+ *       When an order is created successfully:
+ *       - **Customer receives:** "Your order has been registered and is awaiting staff approval." (only if status is PENDING)
+ *       - **All ADMIN/STAFF receive:** "A new order has been registered by [Customer First Name] [Customer Last Name]."
  *       
- *       **Generated Fields:**
- *       - `orderNumber`: Auto-generated unique identifier
- *       - `customerId`: Set to authenticated user's ID
- *       - `status`: Always starts as 'PENDING'
- *       - `createdAt`, `updatedAt`: Current timestamp
- *       
- *       **Next Steps After Creation:**
- *       - Use the returned order ID to upload customer media files
- *       - Order will be visible in the customer's order list
- *       - Staff can view and process the order
+ *       **Additional Behavior:**
+ *       - Order gets a unique order number automatically
+ *       - Default status is set to PENDING
+ *       - Notifications are sent asynchronously and won't affect the API response
+ * 
  *     tags: [Orders]
  *     security:
  *       - bearerAuth: []
@@ -511,10 +548,7 @@
  *         $ref: '#/components/responses/RateLimitError'
  *       500:
  *         $ref: '#/components/responses/InternalServerError'
- */
-
-/**
- * @swagger
+ *
  * /api/v1/orders/{id}:
  *   get:
  *     summary: Get order by ID with conditional media files
@@ -804,10 +838,7 @@
  *         $ref: '#/components/responses/RateLimitError'
  *       500:
  *         $ref: '#/components/responses/InternalServerError'
- */
-
-/**
- * @swagger
+ *
  * /api/v1/orders/{id}/cancel:
  *   patch:
  *     summary: Cancel order by ID (Customer Only - PENDING/IN_PROGRESS)
@@ -996,4 +1027,40 @@
  *         $ref: '#/components/responses/RateLimitError'
  *       500:
  *         $ref: '#/components/responses/InternalServerError'
+ *
+ * /api/v1/orders/{id}/status:
+ *   patch:
+ *     summary: Update order status (Admin & Staff)
+ *     description: Update the status of an order (only ADMIN and STAFF allowed).
+ * 
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Order unique identifier
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateOrderStatusRequest'
+ *     responses:
+ *       200:
+ *         description: Order status updated successfully
+ *       400:
+ *         description: Invalid status value
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (only ADMIN & STAFF allowed)
+ *       404:
+ *         description: Order not found
+ *       500:
+ *         description: Internal server error
  */

@@ -188,6 +188,15 @@
  *           minLength: 6
  *           example: "newPassword456"
  *       description: "Both current and new passwords are required"
+ * 
+ *     RefreshTokenRequest:
+ *       type: object
+ *       required: ["refreshToken"]
+ *       properties:
+ *         refreshToken:
+ *           type: string
+ *           example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+ *           description: "Valid refresh token"
  *
  *   securitySchemes:
  *     bearerAuth:
@@ -195,89 +204,6 @@
  *       scheme: bearer
  *       bearerFormat: JWT
  *       description: "Enter your JWT token in the format: Bearer <token>"
- */
-
-/**
- * @swagger
- * /api/v1/auth/profile:
- *   patch:
- *     summary: Update user profile (Partial Update)
- *     description: Update specific fields of the authenticated user's profile. Only the provided fields will be updated.
- *     tags: [Authentication]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/UpdateProfileRequest'
- *           examples:
- *             update_name_only:
- *               summary: Update name only
- *               value:
- *                 firstName: "John"
- *                 lastName: "Smith"
- *             update_phone_only:
- *               summary: Update phone only
- *               value:
- *                 phone: "09123456789"
- *             update_email_only:
- *               summary: Update email only
- *               value:
- *                 email: "newemail@example.com"
- *             partial_update:
- *               summary: Partial update
- *               value:
- *                 firstName: "Ahmad"
- *                 phone: "09123456789"
- *     responses:
- *       200:
- *         description: Profile updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: "Profile updated successfully"
- *                 data:
- *                   type: object
- *                   properties:
- *                     user:
- *                       $ref: '#/components/schemas/User'
- *       400:
- *         description: Bad request - validation error or duplicate email
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *             examples:
- *               no_fields:
- *                 summary: No fields provided
- *                 value:
- *                   success: false
- *                   message: "At least one field is required to update"
- *               duplicate_email:
- *                 summary: Email already exists
- *                 value:
- *                   success: false
- *                   message: "Email already exists"
- *               invalid_phone:
- *                 summary: Invalid phone format
- *                 value:
- *                   success: false
- *                   message: "Please provide a valid Iranian phone number"
- *       401:
- *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  */
 
 /**
@@ -435,10 +361,7 @@
  *               success: false
  *               message: "Too many authentication attempts, please try again later"
  *               retryAfter: 900
- */
-
-/**
- * @swagger
+ *
  * /api/v1/auth/logout:
  *   post:
  *     summary: User logout
@@ -462,17 +385,50 @@
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
- */
-
-/**
- * @swagger
- * /api/v1/auth/refresh-token:
+ *
+ * /api/v1/auth/logout-all:
  *   post:
- *     summary: Refresh authentication tokens
- *     description: Generate new access and refresh tokens using current valid token
+ *     summary: Logout from all devices
+ *     description: Revoke all refresh tokens and logout from all active sessions
  *     tags: [Authentication]
  *     security:
  *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Logged out from all devices successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *             example:
+ *               success: true
+ *               message: "Logged out from all devices successfully"
+ *       401:
+ *         description: Unauthorized - invalid or missing token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *
+ * /api/v1/auth/refresh-token:
+ *   post:
+ *     summary: Refresh authentication tokens
+ *     description: Generate new access and refresh tokens using a valid refresh token
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RefreshTokenRequest'
+ *           example:
+ *             refreshToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
  *     responses:
  *       200:
  *         description: Token refreshed successfully
@@ -492,16 +448,31 @@
  *                   properties:
  *                     tokens:
  *                       $ref: '#/components/schemas/AuthTokens'
- *       401:
- *         description: Unauthorized
+ *       400:
+ *         description: Bad request - validation error
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
- */
-
-/**
- * @swagger
+ *       401:
+ *         description: Unauthorized - invalid refresh token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Forbidden - revoked or expired refresh token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *
  * /api/v1/auth/profile:
  *   get:
  *     summary: Get user profile
@@ -534,9 +505,10 @@
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
- *   put:
- *     summary: Update user profile
- *     description: Update current authenticated user's profile information
+ *
+ *   patch:
+ *     summary: Update user profile (Partial Update)
+ *     description: Update specific fields of the authenticated user's profile. Only the provided fields will be updated.
  *     tags: [Authentication]
  *     security:
  *       - bearerAuth: []
@@ -546,9 +518,25 @@
  *         application/json:
  *           schema:
  *             $ref: '#/components/schemas/UpdateProfileRequest'
- *           example:
- *             firstName: "John"
- *             lastName: "Smith"
+ *           examples:
+ *             update_name_only:
+ *               summary: Update name only
+ *               value:
+ *                 firstName: "John"
+ *                 lastName: "Smith"
+ *             update_phone_only:
+ *               summary: Update phone only
+ *               value:
+ *                 phone: "09123456789"
+ *             update_email_only:
+ *               summary: Update email only
+ *               value:
+ *                 email: "newemail@example.com"
+ *             partial_update:
+ *               summary: Partial update
+ *               value:
+ *                 firstName: "Ahmad"
+ *                 phone: "09123456789"
  *     responses:
  *       200:
  *         description: Profile updated successfully
@@ -569,21 +557,34 @@
  *                     user:
  *                       $ref: '#/components/schemas/User'
  *       400:
- *         description: Bad request - validation error
+ *         description: Bad request - validation error or duplicate email
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
+ *             examples:
+ *               no_fields:
+ *                 summary: No fields provided
+ *                 value:
+ *                   success: false
+ *                   message: "At least one field is required to update"
+ *               duplicate_email:
+ *                 summary: Email already exists
+ *                 value:
+ *                   success: false
+ *                   message: "Email already exists"
+ *               invalid_phone:
+ *                 summary: Invalid phone format
+ *                 value:
+ *                   success: false
+ *                   message: "Please provide a valid Iranian phone number"
  *       401:
  *         description: Unauthorized
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
- */
-
-/**
- * @swagger
+ *
  * /api/v1/auth/profile/picture:
  *   post:
  *     summary: Upload profile picture
@@ -685,6 +686,7 @@
  *             example:
  *               success: false
  *               message: "Only image files (JPG, JPEG, PNG, WEBP) are allowed"
+ *
  *   delete:
  *     summary: Remove profile picture
  *     description: Remove the current profile picture of the authenticated user
@@ -748,10 +750,7 @@
  *             example:
  *               success: false
  *               message: "User not found"
- */
-
-/**
- * @swagger
+ *
  * /api/v1/auth/change-password:
  *   post:
  *     summary: Change user password

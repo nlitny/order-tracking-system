@@ -1,19 +1,11 @@
-
-const express = require('express');
+const express = require("express");
 const router = express.Router();
+const userController = require("../controllers/userController");
+const { authenticateToken } = require("../middleware/auth");
+const { authorizeRoles } = require("../middleware/roles");
 
-// @desc    Get all users
-// @route   GET /api/v1/users
-// @access  Private/Admin
-router.get('/', (req, res) => {
-  res.json({ message: 'Get all users - Coming Soon' });
-});
+require('../docs/userDocs');
 
-// @desc    Get user profile
-// @route   GET /api/v1/users/:id
-// @access  Private
-router.get('/:id', (req, res) => {
-  res.json({ message: `Get user ${req.params.id} - Coming Soon` });
-});
+router.patch("/users/role",authenticateToken,authorizeRoles("ADMIN"), userController.updateUserRole);
 
 module.exports = router;

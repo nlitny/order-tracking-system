@@ -4,6 +4,7 @@ const orderController = require('../controllers/orderController');
 const { validateRequest } = require('../middleware/validation');
 const { createOrderSchema } = require('../validations/orderValidation');
 const { authenticateToken } = require('../middleware/auth');
+const { authorizeRoles } = require("../middleware/roles");
 
 // Import swagger documentation
 require('../docs/orderDocs');
@@ -50,5 +51,8 @@ router.patch('/:id', orderController.updateOrder);
  * @access  Private
  */
 router.patch('/:id/cancel', orderController.cancelOrder);
+
+
+router.patch('/:id/status', authorizeRoles("ADMIN", "STAFF"), orderController.updateOrderStatus);
 
 module.exports = router;
