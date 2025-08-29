@@ -6,10 +6,11 @@ const { upload } = require('../config/profilePictureConfig');
 const { 
   authSchema, 
   updateProfileSchema, 
-  changePasswordSchema 
+  changePasswordSchema,
+  refreshTokenSchema 
 } = require('../validations/authValidation');
 const { authRateLimit } = require('../middleware/rateLimit');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, authenticateRefreshToken } = require('../middleware/auth');
 
 require('../docs/authDocs');
 
@@ -19,7 +20,9 @@ router.post('/authlogin', validateRequest(authSchema), authController.auth);
 
 router.post('/logout', authenticateToken, authController.logout);
 
-router.post('/refresh-token', authenticateToken, authController.refreshToken);
+router.post('/logout-all', authenticateToken, authController.logoutAll);
+
+router.post('/refresh-token', validateRequest(refreshTokenSchema), authenticateRefreshToken, authController.refreshToken);
 
 router.get('/profile', authenticateToken, authController.getProfile);
 

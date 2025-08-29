@@ -7,7 +7,17 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  isRevoked Boolean  @default(false)
 
+  @@map("refresh_tokens")
+}
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
@@ -21,7 +31,7 @@ model User {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
+  refreshTokens RefreshToken[]
   orders        Order[]
   notifications Notification[]
 
@@ -30,6 +40,7 @@ model User {
   @@index([isActive])
   @@index([email])
 }
+
 
 model Order {
   id          String      @id @default(uuid())
