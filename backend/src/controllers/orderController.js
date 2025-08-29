@@ -1,6 +1,6 @@
-const orderService = require('../services/orderService');
-const AppError = require('../utils/AppError');
-const { successResponse } = require('../utils/responses');
+const orderService = require("../services/orderService");
+const AppError = require("../utils/AppError");
+const { successResponse } = require("../utils/responses");
 
 class OrderController {
   /**
@@ -13,10 +13,7 @@ class OrderController {
 
       const order = await orderService.createOrder(orderData, customerId);
 
-      return successResponse(res, {
-        message: 'Order created successfully',
-        data: order
-      }, 201);
+      return successResponse(res, "Order created successfully", order, 201);
     } catch (error) {
       next(error);
     }
@@ -32,20 +29,20 @@ class OrderController {
       const userId = req.user.id;
 
       const filters = { status, search };
-      
+
       // If user is a customer, only show their orders
-      if (userRole === 'CUSTOMER') {
+      if (userRole === "CUSTOMER") {
         filters.customerId = userId;
       }
 
-      const pagination = { page: parseInt(page) || 1, limit: parseInt(limit) || 10 };
-      
+      const pagination = {
+        page: parseInt(page) || 1,
+        limit: parseInt(limit) || 10,
+      };
+
       const result = await orderService.getOrders(filters, pagination);
 
-      return successResponse(res, {
-        message: 'Orders retrieved successfully',
-        data: result
-      });
+      return successResponse(res, "Orders retrieved successfully", result);
     } catch (error) {
       next(error);
     }
@@ -61,14 +58,11 @@ class OrderController {
       const userId = req.user.id;
 
       // If user is a customer, pass userId to ensure they can only see their own orders
-      const userIdFilter = userRole === 'CUSTOMER' ? userId : null;
-      
+      const userIdFilter = userRole === "CUSTOMER" ? userId : null;
+
       const order = await orderService.getOrderById(id, userIdFilter);
 
-      return successResponse(res, {
-        message: 'Order retrieved successfully',
-        data: order
-      });
+      return successResponse(res, "Order retrieved successfully", order);
     } catch (error) {
       next(error);
     }
@@ -83,36 +77,37 @@ class OrderController {
       const updateData = req.body;
       const userId = req.user.id;
 
-      const updatedOrder = await orderService.updateOrder(id, updateData, userId);
+      const updatedOrder = await orderService.updateOrder(
+        id,
+        updateData,
+        userId
+      );
 
-      return successResponse(res, {
-        message: 'Order updated successfully',
-        data: updatedOrder
-      });
+      return successResponse(res, "Order updated successfully", updatedOrder);
     } catch (error) {
       next(error);
     }
   }
 
   /**
- * Cancel order
- */
-async cancelOrder(req, res, next) {
-  try {
-    const { id } = req.params;
-    const userId = req.user.id;
+   * Cancel order
+   */
+  async cancelOrder(req, res, next) {
+    try {
+      const { id } = req.params;
+      const userId = req.user.id;
 
-    const cancelledOrder = await orderService.cancelOrder(id, userId);
+      const cancelledOrder = await orderService.cancelOrder(id, userId);
 
-    return successResponse(res, {
-      message: 'Order cancelled successfully',
-      data: cancelledOrder
-    });
-  } catch (error) {
-    next(error);
+      return successResponse(
+        res,
+        "Order cancelled successfully",
+        cancelledOrder
+      );
+    } catch (error) {
+      next(error);
+    }
   }
-}
-
 }
 
 module.exports = new OrderController();
