@@ -1,39 +1,31 @@
+const path = require("path");
+require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
 const express = require("express");
-const cors = require("cors");
-const helmet = require("helmet");
 const compression = require("compression");
 const morgan = require("morgan");
-const seed = require('./prisma/seed');
-
+const seed = require("./prisma/seed");
 const { generalRateLimit } = require("./src/middleware/rateLimit");
 const errorHandler = require("./src/middleware/errorHandler");
 const notFoundHandler = require("./src/middleware/notFound");
-
 const authRoutes = require("./src/routes/auth");
-const orderRoutes = require('./src/routes/orders');
-const customerMediaRoutes = require('./src/routes/customerMedia');
-const adminRoutes = require('./src/routes/admin');
-const mediaFile = require('./src/routes/mediaFile');
-const notificationRoutes = require('./src/routes/notification');
-
+const orderRoutes = require("./src/routes/orders");
+const customerMediaRoutes = require("./src/routes/customerMedia");
+const adminRoutes = require("./src/routes/admin");
+const mediaFile = require("./src/routes/mediaFile");
+const notificationRoutes = require("./src/routes/notification");
 const swaggerUi = require("swagger-ui-express");
 const { swaggerSpec } = require("./src/config/swagger");
 const securityMiddleware = require("./src/middleware/securityMiddleware");
 const app = express();
 
 securityMiddleware(app);
-
 app.use(generalRateLimit);
-
 app.use(express.json({ limit: "500mb" }));
 app.use(express.urlencoded({ extended: true, limit: "500mb" }));
-
 app.use(compression());
-
 if (process.env.NODE_ENV !== "test") {
   app.use(morgan("combined"));
 }
-
 app.get("/health", (req, res) => {
   res.status(200).json({
     status: "OK",
@@ -42,17 +34,13 @@ app.get("/health", (req, res) => {
     environment: process.env.NODE_ENV || "development",
   });
 });
-
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-
 app.use("/api/v1/auth", authRoutes);
-app.use('/api/v1/orders', orderRoutes);
-app.use('/api/v1/orders', customerMediaRoutes);
-app.use('/api/v1/orders', mediaFile); 
+app.use("/api/v1/orders", orderRoutes);
+app.use("/api/v1/orders", customerMediaRoutes);
+app.use("/api/v1/orders", mediaFile);
 app.use("/api/v1/admin", adminRoutes);
-app.use('/api/v1/notifications', notificationRoutes);
-
-
+app.use("/api/v1/notifications", notificationRoutes);
 app.use(notFoundHandler);
 app.use(errorHandler);
 

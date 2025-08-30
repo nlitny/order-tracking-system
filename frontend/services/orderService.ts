@@ -17,8 +17,6 @@ export const orderService = {
     try {
       const response = await axiosInstance.post<OrderResponse>("/orders", data);
       return response.data;
-      console.log("Order created:", response.data);
-      
     } catch (error: any) {
       console.error("Error creating order:", error);
       throw new Error(
@@ -48,7 +46,6 @@ export const orderService = {
       );
 
       console.log("Media uploaded:", response.data);
-      
 
       return response.data;
     } catch (error: any) {
@@ -77,7 +74,6 @@ export const orderService = {
         `/orders?${params.toString()}`
       );
       console.log("Orders:", response.data);
-
 
       return response.data;
     } catch (error: any) {

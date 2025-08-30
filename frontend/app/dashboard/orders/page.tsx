@@ -480,7 +480,7 @@ export default function OrdersPage() {
 
             {/* Actions */}
             <Grid size={{ xs: 12, md: 2.5 }}>
-              <Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}>
+              <Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end" , alignItems: "center" }}>
                 <Button
                   variant="outlined"
                   onClick={handleSearch}
@@ -495,7 +495,9 @@ export default function OrdersPage() {
                   sx={{
                     border: "1px solid",
                     borderColor: "primary.main",
-                    borderRadius: 1,
+                    width: 40,
+                    height: 40,
+                    borderRadius: "50%",
                   }}
                 >
                   <Refresh />

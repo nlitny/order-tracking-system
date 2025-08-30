@@ -4,7 +4,7 @@ export interface MenuItem {
   icon: React.ReactNode;
   path?: string;
   children?: MenuItem[];
-  badge?: number;
+  badge?: number | false;
 }
 
 export interface SidebarComponentProps {

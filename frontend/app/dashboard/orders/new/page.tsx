@@ -37,6 +37,7 @@ import { OrderSummary } from "@/components/orders/OrderSummary";
 import { orderService } from "@/services/orderService";
 import { OrderFormData, AttachedFile, FormErrors } from "@/types/order";
 import { useToast } from "@/lib/toast/toast";
+import { useNotifications } from "@/hooks/useNotifications";
 
 const steps = [
   {
@@ -59,10 +60,10 @@ const steps = [
 export default function CreateOrderPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const { showSuccessToast, showErrorToast } = useToast();
+  const { showSuccessToast, showErrorToast, showInfoToast } = useToast();
   const [activeStep, setActiveStep] = useState(0);
   const [completed, setCompleted] = useState<{ [k: number]: boolean }>({});
-
+  const { refreshNotifications } = useNotifications();
   const [formData, setFormData] = useState<OrderFormData>({
     title: "",
     description: "",
@@ -130,6 +131,20 @@ export default function CreateOrderPage() {
     }
   };
 
+  const resetForm = () => {
+    setFormData({
+      title: "",
+      description: "",
+      estimatedCompletion: "",
+      special_instructions: "",
+    });
+    setFiles([]);
+    setSelectedDateTime(null);
+    setActiveStep(0);
+    setCompleted({});
+    setUploadProgress(0);
+  };
+
   const handleSubmit = async () => {
     if (!validateForm()) {
       setActiveStep(0);
@@ -159,40 +174,46 @@ export default function CreateOrderPage() {
 
       setUploadProgress(60);
 
+      // اگر فایل وجود داشت، آپلود کن
       if (files.length > 0) {
         await orderService.uploadMedia(
           orderRes.data.id,
           files.map((f) => f.file)
         );
-        setUploadProgress(100);
+      }
+
+      setUploadProgress(90);
+
+      // refresh notifications
+      await refreshNotifications();
+
+      setUploadProgress(100);
+
+      // نمایش پیغام موفقیت
+      if (files.length > 0) {
         showSuccessToast("Order created and files uploaded successfully");
       } else {
-        setUploadProgress(100);
         showSuccessToast("Order created successfully");
       }
 
-      // Reset form
+      // نمایش پیغام اطلاعات
+      showInfoToast("You Have Unread Notification", {
+        position: "bottom-left",
+      });
+
+      // منتظر بمان تا پیغام‌ها نمایش داده شوند، سپس فرم را ریست کن
       setTimeout(() => {
-        setFormData({
-          title: "",
-          description: "",
-          estimatedCompletion: "",
-          special_instructions: "",
-        });
-        setFiles([]);
-        setSelectedDateTime(null);
-        setActiveStep(0);
-        setCompleted({});
-        setUploadProgress(0);
+        resetForm();
+        setIsSubmitting(false);
       }, 2000);
     } catch (err) {
       console.error("Order creation failed:", err);
       showErrorToast("Failed to create order. Please try again.");
       setUploadProgress(0);
-    } finally {
       setIsSubmitting(false);
     }
   };
+
   const isStepCompleted = (step: number): boolean => {
     switch (step) {
       case 0:
@@ -345,7 +366,9 @@ export default function CreateOrderPage() {
                 sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}
               >
                 <Typography variant="body2" color="text.secondary">
-                  Creating order...
+                  {uploadProgress < 100
+                    ? "Creating order..."
+                    : "Order created successfully!"}
                 </Typography>
                 <Typography
                   variant="body2"
@@ -724,7 +747,7 @@ export default function CreateOrderPage() {
                   >
                     <Button
                       onClick={handleBack}
-                      disabled={activeStep === 0}
+                      disabled={activeStep === 0 || isSubmitting}
                       variant="outlined"
                       size="large"
                       sx={{
@@ -746,7 +769,7 @@ export default function CreateOrderPage() {
                           onClick={handleNext}
                           variant="contained"
                           size="large"
-                          disabled={!canProceed()}
+                          disabled={!canProceed() || isSubmitting}
                           sx={{
                             minWidth: { xs: "100%", sm: 120 },
                           }}
@@ -798,10 +821,14 @@ export default function CreateOrderPage() {
           <Box sx={{ textAlign: "center" }}>
             <CircularProgress color="inherit" size={60} />
             <Typography variant="h6" sx={{ mt: 2, color: "white" }}>
-              Creating your order...
+              {uploadProgress < 100
+                ? "Creating your order..."
+                : "Order created successfully!"}
             </Typography>
             <Typography variant="body2" sx={{ opacity: 0.8, color: "white" }}>
-              Please wait while we process your request
+              {uploadProgress < 100
+                ? "Please wait while we process your request"
+                : "Preparing to reset form..."}
             </Typography>
           </Box>
         </Backdrop>

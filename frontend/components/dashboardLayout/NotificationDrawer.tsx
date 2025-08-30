@@ -18,7 +18,6 @@ import {
   useTheme,
   alpha,
   Tooltip,
-  Collapse,
   useMediaQuery,
   Skeleton,
   Zoom,
@@ -28,7 +27,6 @@ import {
   NotificationsOff as NotificationsOffIcon,
   Schedule as ScheduleIcon,
   MarkEmailRead as ReadIcon,
-  Delete as DeleteIcon,
   ViewList as ViewAllIcon,
   Assignment as OrderIcon,
   CheckCircle as CompletedIcon,
@@ -36,6 +34,7 @@ import {
   Build as ProcessingIcon,
   Cancel as CancelledIcon,
   Pause as OnHoldIcon,
+  OpenInNew as OpenIcon,
 } from "@mui/icons-material";
 import { formatDistanceToNow, format, isToday, isYesterday } from "date-fns";
 import { useRouter } from "next/navigation";
@@ -48,7 +47,6 @@ interface NotificationDrawerProps {
   appBarHeight: number;
 }
 
-// تنظیمات وضعیت سفارش بر اساس API
 const ORDER_STATUS_CONFIG = {
   PENDING: {
     icon: PendingIcon,
@@ -82,14 +80,6 @@ const ORDER_STATUS_CONFIG = {
   },
 };
 
-const NOTIFICATION_TYPE_CONFIG = {
-  ORDER_UPDATE: { label: "Order Updated", priority: "medium" },
-  ORDER_CREATED: { label: "New Order", priority: "high" },
-  ORDER_CANCELLED: { label: "Order Cancelled", priority: "high" },
-  ORDER_COMPLETED: { label: "Order Completed", priority: "low" },
-  ORDER_APPROVED: { label: "Order Approved", priority: "medium" },
-};
-
 export default function NotificationDrawer({
   open,
   onClose,
@@ -102,17 +92,11 @@ export default function NotificationDrawer({
   const {
     unreadCount,
     loading,
-    error,
     markAsRead,
-    markAllAsRead,
     getRecentNotifications,
     getCriticalNotifications,
     refreshNotifications,
   } = useNotifications();
-
-  const [expandedNotification, setExpandedNotification] = useState<
-    string | null
-  >(null);
 
   // نمایش تعداد محدود اعلان‌ها
   const displayNotifications = useMemo(() => {
@@ -123,25 +107,30 @@ export default function NotificationDrawer({
     return getCriticalNotifications();
   }, [getCriticalNotifications]);
 
-  // توابع بهینه شده
-  const toggleExpanded = useCallback((id: string) => {
-    setExpandedNotification((prev) => (prev === id ? null : id));
-  }, []);
+  // توابع event handler
+  const handleMarkAsRead = useCallback(
+    async (e: React.MouseEvent, notificationId: string) => {
+      e.preventDefault();
+      e.stopPropagation();
+      await markAsRead(notificationId);
+    },
+    [markAsRead]
+  );
 
-  const handleNotificationClick = useCallback(
-    async (notification: Notification) => {
+  const handleViewOrder = useCallback(
+    async (e: React.MouseEvent, notification: Notification) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      // اگر خوانده نشده است، ابتدا آن را خوانده شده علامت‌گذاری کن
       if (!notification.isRead) {
         await markAsRead(notification.id);
       }
-      toggleExpanded(notification.id);
 
-      // هدایت به صفحه سفارش
-      if (notification.orderId) {
-        router.push(`/dashboard/orders/${notification.orderId}`);
-        onClose();
-      }
+      router.push(`/dashboard/orders/${notification.orderId}`);
+      onClose();
     },
-    [markAsRead, toggleExpanded, router, onClose]
+    [markAsRead, router, onClose]
   );
 
   const handleViewAllClick = useCallback(() => {
@@ -168,7 +157,6 @@ export default function NotificationDrawer({
     const config =
       ORDER_STATUS_CONFIG[status as keyof typeof ORDER_STATUS_CONFIG];
     if (!config) return <OrderIcon sx={{ fontSize: 18 }} />;
-
     const IconComponent = config.icon;
     return <IconComponent sx={{ fontSize: 18 }} />;
   }, []);
@@ -299,7 +287,7 @@ export default function NotificationDrawer({
           backdropFilter: "blur(20px)",
           borderRadius: {
             xs: 0,
-            sm: "8px 0 0 8px",
+            sm: 1,
           },
           boxShadow: theme.shadows[8],
           overflowX: "hidden",
@@ -328,7 +316,6 @@ export default function NotificationDrawer({
             minWidth: 0,
           }}
         >
-          {/* ردیف اول هدر */}
           <Box
             sx={{
               display: "flex",
@@ -370,40 +357,6 @@ export default function NotificationDrawer({
                     }}
                   />
                 </Badge>
-                {criticalNotifications.length > 0 && (
-                  <Box
-                    sx={{
-                      position: "absolute",
-                      top: -2,
-                      right: -2,
-                      width: 12,
-                      height: 12,
-                      borderRadius: "50%",
-                      bgcolor: theme.palette.error.main,
-                      animation: "pulse 2s infinite",
-                      "@keyframes pulse": {
-                        "0%": {
-                          boxShadow: `0 0 0 0 ${alpha(
-                            theme.palette.error.main,
-                            0.7
-                          )}`,
-                        },
-                        "70%": {
-                          boxShadow: `0 0 0 6px ${alpha(
-                            theme.palette.error.main,
-                            0
-                          )}`,
-                        },
-                        "100%": {
-                          boxShadow: `0 0 0 0 ${alpha(
-                            theme.palette.error.main,
-                            0
-                          )}`,
-                        },
-                      },
-                    }}
-                  />
-                )}
               </Box>
 
               <Box sx={{ minWidth: 0, flex: 1 }}>
@@ -426,9 +379,6 @@ export default function NotificationDrawer({
                     color: theme.palette.text.secondary,
                     fontSize: { xs: "0.7rem", sm: "0.75rem" },
                     fontWeight: 500,
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
                   }}
                 >
                   {unreadCount > 0
@@ -467,62 +417,24 @@ export default function NotificationDrawer({
             </Tooltip>
           </Box>
 
-          {/* دکمه‌های عملیات */}
+          {/* دکمه Refresh */}
           <Box
             sx={{
               display: "flex",
               gap: 1,
               flexWrap: "wrap",
-              "& > *": {
-                minWidth: 0,
-              },
             }}
           >
-            <Button
-              size="small"
-              variant="outlined"
-              onClick={markAllAsRead}
-              disabled={unreadCount === 0}
-              startIcon={<ReadIcon sx={{ fontSize: 14 }} />}
-              sx={{
-                borderRadius: 2,
-                fontSize: "0.75rem",
-                px: 1.5,
-                py: 0.5,
-                borderColor: theme.palette.primary.main,
-                color: theme.palette.primary.main,
-                whiteSpace: "nowrap",
-                "&:hover": {
-                  transform: "translateY(-1px)",
-                  boxShadow: theme.shadows[2],
-                  borderColor: theme.palette.primary.dark,
-                },
-                transition: theme.transitions.create([
-                  "transform",
-                  "box-shadow",
-                ]),
-              }}
-            >
-              Mark All Read
-            </Button>
             <Button
               size="small"
               variant="text"
               onClick={handleRefresh}
               sx={{
-                borderRadius: 2,
+                borderRadius: 1,
                 fontSize: "0.75rem",
                 px: 1.5,
                 py: 0.5,
                 whiteSpace: "nowrap",
-                "&:hover": {
-                  transform: "translateY(-1px)",
-                  backgroundColor: alpha(theme.palette.primary.main, 0.08),
-                },
-                transition: theme.transitions.create([
-                  "transform",
-                  "background-color",
-                ]),
               }}
             >
               Refresh
@@ -545,7 +457,6 @@ export default function NotificationDrawer({
           ) : (
             <List sx={{ p: 0 }}>
               {displayNotifications.map((notification, index) => {
-                const isExpanded = expandedNotification === notification.id;
                 const statusConfig = getOrderStatusConfig(
                   notification.order.status
                 );
@@ -554,11 +465,9 @@ export default function NotificationDrawer({
                   <React.Fragment key={notification.id}>
                     <ListItem
                       alignItems="flex-start"
-                      onClick={() => handleNotificationClick(notification)}
                       sx={{
                         px: { xs: 2, sm: 2.5, md: 3 },
                         py: { xs: 1.5, sm: 2 },
-                        cursor: "pointer",
                         position: "relative",
                         backgroundColor: !notification.isRead
                           ? alpha(theme.palette.primary.main, 0.02)
@@ -567,19 +476,7 @@ export default function NotificationDrawer({
                           ? `4px solid ${theme.palette.primary.main}`
                           : "4px solid transparent",
                         minWidth: 0,
-                        "&:hover": {
-                          backgroundColor: alpha(theme.palette.grey[200], 0.4),
-                          transform: "translateX(2px)",
-                        },
-                        "&:active": {
-                          transform: "translateX(2px) scale(0.998)",
-                        },
-                        transition: theme.transitions.create(
-                          ["background-color", "transform", "box-shadow"],
-                          {
-                            duration: 200,
-                          }
-                        ),
+                        cursor: "default",
                       }}
                     >
                       <ListItemAvatar sx={{ mt: 0.5, mr: { xs: 1, sm: 2 } }}>
@@ -601,7 +498,7 @@ export default function NotificationDrawer({
                       </ListItemAvatar>
 
                       <Box sx={{ flex: 1, minWidth: 0 }}>
-                        {/* Primary content */}
+                        {/* عنوان و وضعیت */}
                         <Box
                           sx={{
                             display: "flex",
@@ -627,219 +524,205 @@ export default function NotificationDrawer({
                             {notification.title}
                           </Typography>
 
-                          <Box
+                          <Chip
+                            icon={getOrderStatusIcon(notification.order.status)}
+                            label={statusConfig.label}
+                            size="small"
+                            variant="outlined"
                             sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 0.5,
+                              height: { xs: 20, sm: 22 },
+                              fontSize: { xs: "0.65rem", sm: "0.7rem" },
+                              fontWeight: 500,
+                              borderColor: alpha(statusConfig.color, 0.3),
+                              color: statusConfig.color,
+                              backgroundColor: alpha(statusConfig.color, 0.05),
                               flexShrink: 0,
                             }}
-                          >
-                            <Chip
-                              icon={getOrderStatusIcon(
-                                notification.order.status
-                              )}
-                              label={statusConfig.label}
-                              size="small"
-                              variant="outlined"
-                              sx={{
-                                height: { xs: 20, sm: 22 },
-                                fontSize: { xs: "0.65rem", sm: "0.7rem" },
-                                fontWeight: 500,
-                                borderColor: alpha(statusConfig.color, 0.3),
-                                color: statusConfig.color,
-                                backgroundColor: alpha(
-                                  statusConfig.color,
-                                  0.05
-                                ),
-                                "& .MuiChip-icon": {
-                                  ml: 0.5,
-                                  fontSize: { xs: 14, sm: 16 },
-                                },
-                                "& .MuiChip-label": {
-                                  px: { xs: 0.5, sm: 1 },
-                                },
-                              }}
-                            />
-                          </Box>
+                          />
                         </Box>
 
-                        {/* Secondary content */}
-                        <Box>
+                        {/* متن پیام */}
+                        <Typography
+                          component="div"
+                          variant="body2"
+                          sx={{
+                            color: theme.palette.text.secondary,
+                            mb: 1.5,
+                            fontSize: { xs: "0.75rem", sm: "0.8rem" },
+                            lineHeight: 1.4,
+                            wordBreak: "break-word",
+                          }}
+                        >
+                          {notification.message}
+                        </Typography>
+
+                        {/* جزئیات سفارش */}
+                        <Box
+                          sx={{
+                            p: 1.5,
+                            borderRadius: 1,
+                            backgroundColor: alpha(
+                              theme.palette.background.paper,
+                              0.6
+                            ),
+                            border: `1px solid ${theme.palette.divider}`,
+                            mb: 1.5,
+                          }}
+                        >
                           <Typography
                             component="div"
-                            variant="body2"
+                            variant="caption"
                             sx={{
+                              fontWeight: 600,
                               color: theme.palette.text.secondary,
+                              textTransform: "uppercase",
+                              letterSpacing: 0.5,
                               mb: 1,
-                              fontSize: { xs: "0.75rem", sm: "0.8rem" },
-                              lineHeight: 1.4,
-                              wordBreak: "break-word",
+                              display: "block",
                             }}
                           >
-                            {notification.message}
+                            Order Details
                           </Typography>
-
-                          {/* محتوای گسترده شده */}
-                          <Collapse in={isExpanded} timeout={300}>
-                            <Box
-                              sx={{
-                                mt: 1.5,
-                                p: 1.5,
-                                borderRadius: 2,
-                                backgroundColor: alpha(
-                                  theme.palette.background.paper,
-                                  0.6
-                                ),
-                                border: `1px solid ${theme.palette.divider}`,
-                              }}
-                            >
-                              <Typography
-                                component="div"
-                                variant="caption"
-                                sx={{
-                                  fontWeight: 600,
-                                  color: theme.palette.text.secondary,
-                                  textTransform: "uppercase",
-                                  letterSpacing: 0.5,
-                                  mb: 1,
-                                  display: "block",
-                                }}
-                              >
-                                Order Details
-                              </Typography>
-
-                              <Box
-                                sx={{
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  mb: 0.5,
-                                  gap: 1,
-                                }}
-                              >
-                                <Typography
-                                  component="span"
-                                  variant="caption"
-                                  color="text.secondary"
-                                  sx={{ flexShrink: 0 }}
-                                >
-                                  Order Number:
-                                </Typography>
-                                <Typography
-                                  component="span"
-                                  variant="caption"
-                                  sx={{
-                                    fontWeight: 600,
-                                    fontFamily: "monospace",
-                                    wordBreak: "break-all",
-                                  }}
-                                >
-                                  {notification.order.orderNumber}
-                                </Typography>
-                              </Box>
-
-                              <Box
-                                sx={{
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  mb: 0.5,
-                                  gap: 1,
-                                }}
-                              >
-                                <Typography
-                                  component="span"
-                                  variant="caption"
-                                  color="text.secondary"
-                                  sx={{ flexShrink: 0 }}
-                                >
-                                  Order Title:
-                                </Typography>
-                                <Typography
-                                  component="span"
-                                  variant="caption"
-                                  sx={{
-                                    fontWeight: 500,
-                                    wordBreak: "break-word",
-                                  }}
-                                >
-                                  {notification.order.title}
-                                </Typography>
-                              </Box>
-                            </Box>
-                          </Collapse>
 
                           <Box
                             sx={{
                               display: "flex",
                               justifyContent: "space-between",
-                              alignItems: "center",
-                              mt: 1,
-                              gap: 1,
-                              minWidth: 0,
+                              mb: 0.5,
                             }}
                           >
-                            <Box
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
+                              Order Number:
+                            </Typography>
+                            <Typography
+                              variant="caption"
                               sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 0.5,
-                                minWidth: 0,
-                                flex: 1,
+                                fontWeight: 600,
+                                fontFamily: "monospace",
+                                wordBreak: "break-all",
                               }}
                             >
-                              <ScheduleIcon
+                              {notification.order.orderNumber}
+                            </Typography>
+                          </Box>
+
+                          <Box
+                            sx={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                            }}
+                          >
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
+                              Order Title:
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                fontWeight: 500,
+                                wordBreak: "break-word",
+                                maxWidth: "60%",
+                                textAlign: "right",
+                              }}
+                            >
+                              {notification.order.title}
+                            </Typography>
+                          </Box>
+                        </Box>
+
+                        {/* زمان و دکمه‌های عملیات */}
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            gap: 1,
+                            minWidth: 0,
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 0.5,
+                              minWidth: 0,
+                              flex: 1,
+                            }}
+                          >
+                            <ScheduleIcon
+                              sx={{
+                                fontSize: 12,
+                                color: theme.palette.text.disabled,
+                                flexShrink: 0,
+                              }}
+                            />
+                            <Typography
+                              component="span"
+                              variant="caption"
+                              sx={{
+                                color: theme.palette.text.disabled,
+                                fontSize: { xs: "0.65rem", sm: "0.7rem" },
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
+                              {formatNotificationTime(notification.sentAt)}
+                            </Typography>
+                          </Box>
+
+                          {/* دکمه‌های عملیات */}
+                          <Box
+                            sx={{ display: "flex", gap: 0.5, flexShrink: 0 }}
+                          >
+                            {!notification.isRead && (
+                              <Tooltip title="Mark as read">
+                                <IconButton
+                                  size="small"
+                                  onClick={(e) =>
+                                    handleMarkAsRead(e, notification.id)
+                                  }
+                                  sx={{
+                                    color: theme.palette.success.main,
+                                    "&:hover": {
+                                      backgroundColor: alpha(
+                                        theme.palette.success.main,
+                                        0.08
+                                      ),
+                                      transform: "scale(1.1)",
+                                    },
+                                  }}
+                                >
+                                  <ReadIcon sx={{ fontSize: 14 }} />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+
+                            <Tooltip title="View order details">
+                              <IconButton
+                                size="small"
+                                onClick={(e) =>
+                                  handleViewOrder(e, notification)
+                                }
                                 sx={{
-                                  fontSize: 12,
-                                  color: theme.palette.text.disabled,
-                                  flexShrink: 0,
-                                }}
-                              />
-                              <Typography
-                                component="span"
-                                variant="caption"
-                                sx={{
-                                  color: theme.palette.text.disabled,
-                                  fontSize: { xs: "0.65rem", sm: "0.7rem" },
-                                  whiteSpace: "nowrap",
-                                  overflow: "hidden",
-                                  textOverflow: "ellipsis",
+                                  color: theme.palette.primary.main,
+                                  "&:hover": {
+                                    backgroundColor: alpha(
+                                      theme.palette.primary.main,
+                                      0.08
+                                    ),
+                                    transform: "scale(1.1)",
+                                  },
                                 }}
                               >
-                                {formatNotificationTime(notification.sentAt)}
-                              </Typography>
-                            </Box>
-
-                            <Box
-                              sx={{ display: "flex", gap: 0.5, flexShrink: 0 }}
-                            >
-                              {!notification.isRead && (
-                                <Tooltip title="Mark as read">
-                                  <IconButton
-                                    size="small"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      markAsRead(notification.id);
-                                    }}
-                                    sx={{
-                                      color: theme.palette.success.main,
-                                      "&:hover": {
-                                        backgroundColor: alpha(
-                                          theme.palette.success.main,
-                                          0.08
-                                        ),
-                                        transform: "scale(1.1)",
-                                      },
-                                      transition: theme.transitions.create([
-                                        "background-color",
-                                        "transform",
-                                      ]),
-                                    }}
-                                  >
-                                    <ReadIcon sx={{ fontSize: 14 }} />
-                                  </IconButton>
-                                </Tooltip>
-                              )}
-                            </Box>
+                                <OpenIcon sx={{ fontSize: 14 }} />
+                              </IconButton>
+                            </Tooltip>
                           </Box>
                         </Box>
 
@@ -878,7 +761,7 @@ export default function NotificationDrawer({
           )}
         </Box>
 
-        {/* فوتر - دکمه مشاهده همه */}
+        {/* فوتر */}
         <Box
           sx={{
             p: { xs: 2, sm: 2.5 },
@@ -894,22 +777,13 @@ export default function NotificationDrawer({
             onClick={handleViewAllClick}
             startIcon={<ViewAllIcon />}
             sx={{
-              borderRadius: 2,
+              borderRadius: 1,
               py: 1,
               fontWeight: 600,
-              borderColor: theme.palette.primary.main,
-              color: theme.palette.primary.main,
               "&:hover": {
-                backgroundColor: alpha(theme.palette.primary.main, 0.08),
-                borderColor: theme.palette.primary.dark,
                 transform: "translateY(-1px)",
                 boxShadow: theme.shadows[4],
               },
-              transition: theme.transitions.create([
-                "transform",
-                "box-shadow",
-                "background-color",
-              ]),
             }}
           >
             View All Notifications

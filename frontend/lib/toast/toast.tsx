@@ -23,10 +23,6 @@ import {
   useTheme,
 } from "@mui/material";
 import {
-  CheckCircleOutlineRounded,
-  ErrorOutlineRounded,
-  InfoOutlined,
-  WarningAmberRounded,
   Close as CloseIcon,
   TaskAlt,
   ReportProblem,
@@ -89,15 +85,13 @@ const StyledAlert = styled(Alert, {
   shouldForwardProp: (prop) => !["customVariant"].includes(prop as string),
 })<{ customVariant?: ToastVariant }>(({ theme, severity, customVariant }) => {
   const baseStyles = {
-    borderRadius: 15,
+    borderRadius: 12,
     display: "flex",
     alignItems: "center",
     minHeight: 56,
     fontSize: "0.95rem",
     fontWeight: 500,
-    backdropFilter: "blur(10px)",
     transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-    border: "none",
     position: "relative" as const,
     overflow: "hidden" as const,
 
@@ -126,112 +120,127 @@ const StyledAlert = styled(Alert, {
     },
   };
 
-  // Color mapping with brand colors
+  // رنگ‌بندی بر اساس تم شما - بدون شیشه‌ای
   const colorConfig = {
     success: {
-      main: brandColors.lightTeal,
-      dark: brandColors.teal,
-      contrast: "#ffffff",
+      main: brandColors.lightTeal, // #71BBB2
+      dark: brandColors.teal, // #497D74
+      light: "#8ac7be",
+      bg: "#e8f5f3", // Light solid background
+      contrast: brandColors.navy, // #27445D for text
+      contrastLight: "#ffffff", // White for filled
     },
     error: {
-      main: "#f44336",
-      dark: "#d32f2f",
-      contrast: "#ffffff",
+      main: "#B85450",
+      dark: "#a34541",
+      light: "#c76f6b",
+      bg: "#fdeaea", // Light solid background
+      contrast: "#5c1f1e", // Dark red for text
+      contrastLight: "#ffffff",
     },
     warning: {
-      main: "#ff9800",
-      dark: "#f57c00",
-      contrast: "#ffffff",
+      main: "#D4A574",
+      dark: "#c19960",
+      light: "#e0b689",
+      bg: "#fef7ec", // Light solid background
+      contrast: "#7c4a03", // Dark amber for text
+      contrastLight: "#ffffff",
     },
     info: {
-      main: brandColors.teal,
-      dark: brandColors.navy,
-      contrast: "#ffffff",
+      main: brandColors.teal, // #497D74
+      dark: brandColors.navy, // #27445D
+      light: "#5e968b",
+      bg: "#eef6f5", // Light solid background
+      contrast: brandColors.navy, // #27445D
+      contrastLight: "#ffffff",
     },
   };
 
   const colors = colorConfig[severity || "info"];
 
   switch (customVariant) {
-    case "glass":
-      return {
-        ...baseStyles,
-        background: `linear-gradient(135deg, ${alpha(
-          colors.main,
-          0.15
-        )} 0%, ${alpha(colors.dark, 0.08)} 100%)`,
-        backdropFilter: "blur(20px)",
-        border: `1px solid ${alpha(colors.main, 0.25)}`,
-        boxShadow: `0 8px 32px ${alpha(
-          colors.main,
-          0.15
-        )}, inset 0 1px 0 ${alpha("#ffffff", 0.2)}`,
-        color: colors.dark,
-
-        ".MuiAlert-icon": {
-          color: colors.main,
-          background: `linear-gradient(135deg, ${alpha(
-            colors.main,
-            0.15
-          )} 0%, ${alpha(colors.main, 0.08)} 100%)`,
-          borderRadius: "50%",
-          width: 36,
-          height: 36,
-        },
-      };
-
     case "filled":
       return {
         ...baseStyles,
         background: `linear-gradient(135deg, ${colors.main} 0%, ${colors.dark} 100%)`,
-        color: colors.contrast,
-        boxShadow: `0 6px 20px ${alpha(colors.main, 0.4)}, 0 2px 8px ${alpha(
-          colors.main,
-          0.2
-        )}`,
+        color: colors.contrastLight,
+        boxShadow: `0 4px 20px ${alpha(colors.main, 0.3)}`,
+        border: "none",
 
         ".MuiAlert-icon": {
-          color: colors.contrast,
-          background: alpha(colors.contrast, 0.15),
+          color: colors.contrastLight,
+          background: alpha(colors.contrastLight, 0.15),
           borderRadius: "50%",
           width: 36,
           height: 36,
+        },
+
+        "&::after": {
+          content: '""',
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "1px",
+          background: `linear-gradient(90deg, transparent 0%, ${alpha(
+            colors.contrastLight,
+            0.3
+          )} 50%, transparent 100%)`,
         },
       };
 
     case "outlined":
       return {
         ...baseStyles,
-        background: `linear-gradient(135deg, ${alpha(
-          colors.main,
-          0.08
-        )} 0%, ${alpha(colors.dark, 0.04)} 100%)`,
+        background: colors.bg, // Solid light background
         border: `2px solid ${colors.main}`,
-        color: colors.dark,
-        boxShadow: `0 4px 16px ${alpha(colors.main, 0.15)}`,
+        color: colors.contrast,
+        boxShadow: `0 2px 12px ${alpha(colors.main, 0.15)}`,
 
         ".MuiAlert-icon": {
           color: colors.main,
-          background: alpha(colors.main, 0.1),
+          background: alpha(colors.main, 0.12),
           borderRadius: "50%",
           width: 36,
           height: 36,
+          border: `1px solid ${alpha(colors.main, 0.2)}`,
         },
       };
 
-    default: // standard
+    case "standard":
       return {
         ...baseStyles,
-        background: `linear-gradient(135deg, ${alpha(
-          colors.main,
-          0.12
-        )} 0%, ${alpha(colors.dark, 0.06)} 100%)`,
-        color: colors.dark,
-        boxShadow: `0 4px 12px ${alpha(theme.palette.grey[500], 0.15)}`,
-        border: `1px solid ${alpha(colors.main, 0.2)}`,
+        background: colors.bg, // Solid light background
+        color: colors.contrast,
+        border: `1px solid ${alpha(colors.main, 0.3)}`,
+        boxShadow: `0 2px 8px ${alpha(theme.palette.grey[400], 0.15)}`,
 
         ".MuiAlert-icon": {
           color: colors.main,
+          background: alpha(colors.main, 0.08),
+          borderRadius: "50%",
+          width: 32,
+          height: 32,
+        },
+      };
+
+    default: // glass - but with solid background for better readability
+      return {
+        ...baseStyles,
+        background: `linear-gradient(135deg, ${colors.bg} 0%, ${alpha(
+          colors.bg,
+          0.95
+        )} 100%)`,
+        border: `1px solid ${alpha(colors.main, 0.25)}`,
+        boxShadow: `0 4px 16px ${alpha(colors.main, 0.2)}`,
+        color: colors.contrast,
+
+        ".MuiAlert-icon": {
+          color: colors.main,
+          background: alpha(colors.main, 0.15),
+          borderRadius: "50%",
+          width: 36,
+          height: 36,
         },
       };
   }
@@ -242,6 +251,7 @@ const ToastIconContainer = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
+  zIndex: 2,
 }));
 
 const ProgressBar = styled(Box, {
@@ -249,8 +259,8 @@ const ProgressBar = styled(Box, {
 })<{ duration: number; severity: ToastSeverity }>(({ duration, severity }) => {
   const colorConfig = {
     success: brandColors.lightTeal,
-    error: "#f44336",
-    warning: "#ff9800",
+    error: "#B85450",
+    warning: "#D4A574",
     info: brandColors.teal,
   };
 
@@ -259,33 +269,44 @@ const ProgressBar = styled(Box, {
     bottom: 0,
     left: 0,
     height: 3,
-    background: `linear-gradient(90deg, ${colorConfig[severity]} 0%, ${alpha(
-      colorConfig[severity],
-      0.7
-    )} 100%)`,
-    animation: `progressAnimation ${duration}ms linear`,
+    background: colorConfig[severity],
+    animation: `progressAnimation ${duration}ms ease-out`,
     transformOrigin: "left",
+    borderRadius: "0 0 12px 12px",
 
     "@keyframes progressAnimation": {
       "0%": {
         width: "100%",
+        opacity: 1,
+      },
+      "90%": {
+        opacity: 1,
       },
       "100%": {
         width: "0%",
+        opacity: 0.5,
       },
     },
   };
 });
+
+const MessageContainer = styled(Box)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  flex: 1,
+  position: "relative",
+  zIndex: 2,
+}));
 
 // ==================== Default values ====================
 
 const DEFAULT_OPTIONS: Required<ToastOptions> = {
   duration: 5000,
   position: "top-right",
-  variant: "glass", // Changed to glass as default
+  variant: "standard", // Changed from glass to standard
   action: null,
   hideCloseButton: false,
-  showProgressBar: true, // Added progress bar by default
+  showProgressBar: true,
 };
 
 const getSlideDirection = (
@@ -313,14 +334,14 @@ const getPositionCoordinates = (
 const getToastIcon = (severity: ToastSeverity) => {
   switch (severity) {
     case "success":
-      return <TaskAlt />;
+      return <TaskAlt sx={{ fontSize: "1.4rem" }} />;
     case "error":
-      return <ReportProblem />;
+      return <ReportProblem sx={{ fontSize: "1.4rem" }} />;
     case "warning":
-      return <NotificationImportant />;
+      return <NotificationImportant sx={{ fontSize: "1.4rem" }} />;
     case "info":
     default:
-      return <Announcement />;
+      return <Announcement sx={{ fontSize: "1.4rem" }} />;
   }
 };
 
@@ -342,7 +363,7 @@ export function ToastProvider({
     key: 0,
   });
 
-  const { open, message, severity, options, key, startTime } = toastState;
+  const { open, message, severity, options, key } = toastState;
   const {
     position,
     duration,
@@ -389,7 +410,6 @@ export function ToastProvider({
     setToastState((prev) => ({ ...prev, open: false }));
   }, []);
 
-  // Enhanced convenience methods with better defaults for the project
   const showToast = useCallback(
     (message: string, severity: ToastSeverity, options?: ToastOptions) => {
       triggerToast(message, severity, options);
@@ -400,8 +420,9 @@ export function ToastProvider({
   const showSuccessToast = useCallback(
     (message: string, options?: ToastOptions) => {
       showToast(message, "success", {
-        variant: "glass",
+        variant: "standard",
         duration: 4000,
+        showProgressBar: true,
         ...options,
       });
     },
@@ -413,6 +434,7 @@ export function ToastProvider({
       showToast(message, "error", {
         variant: "filled",
         duration: 6000,
+        showProgressBar: true,
         ...options,
       });
     },
@@ -422,8 +444,9 @@ export function ToastProvider({
   const showInfoToast = useCallback(
     (message: string, options?: ToastOptions) => {
       showToast(message, "info", {
-        variant: "glass",
+        variant: "standard",
         duration: 4000,
+        showProgressBar: true,
         ...options,
       });
     },
@@ -435,6 +458,7 @@ export function ToastProvider({
       showToast(message, "warning", {
         variant: "outlined",
         duration: 5000,
+        showProgressBar: true,
         ...options,
       });
     },
@@ -480,6 +504,14 @@ export function ToastProvider({
           maxWidth: { xs: "calc(100% - 16px)", sm: 420 },
           minWidth: { xs: "calc(100% - 16px)", sm: 320 },
           zIndex: theme.zIndex.snackbar + 100,
+
+          [theme.breakpoints.down("sm")]: {
+            "& .MuiSnackbar-root": {
+              left: "8px !important",
+              right: "8px !important",
+              width: "calc(100% - 16px)",
+            },
+          },
         }}
         TransitionComponent={(props) => (
           <Slide {...props} direction={slideDirection} timeout={400} />
@@ -495,35 +527,50 @@ export function ToastProvider({
             (!hideCloseButton && (
               <IconButton
                 size="small"
-                aria-label="close"
+                aria-label="close toast notification"
                 color="inherit"
                 onClick={closeToast}
                 sx={{
                   opacity: 0.8,
+                  zIndex: 3,
+                  backgroundColor: alpha(
+                    variant === "filled" ? "#ffffff" : brandColors.navy,
+                    0.1
+                  ),
+                  borderRadius: "50%",
+                  width: 28,
+                  height: 28,
                   "&:hover": {
                     opacity: 1,
                     transform: "scale(1.1)",
+                    backgroundColor: alpha(
+                      variant === "filled" ? "#ffffff" : brandColors.navy,
+                      0.15
+                    ),
                   },
-                  transition: "all 0.2s ease",
+                  transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
                 }}
               >
-                <CloseIcon fontSize="small" />
+                <CloseIcon sx={{ fontSize: "1rem" }} />
               </IconButton>
             ))
           }
         >
           <ToastIconContainer>{getToastIcon(severity)}</ToastIconContainer>
-          <Typography
-            variant="body2"
-            sx={{
-              lineHeight: 1.5,
-              fontWeight: 500,
-            }}
-          >
-            {message}
-          </Typography>
 
-          {/* Progress Bar */}
+          <MessageContainer>
+            <Typography
+              variant="body2"
+              sx={{
+                lineHeight: 1.5,
+                fontWeight: 500,
+                fontSize: "0.95rem",
+              }}
+            >
+              {message}
+            </Typography>
+          </MessageContainer>
+
           {showProgressBar && open && (
             <ProgressBar duration={duration} severity={severity} />
           )}
@@ -534,12 +581,14 @@ export function ToastProvider({
         id="__next-toast-context"
         style={{ display: "none" }}
         data-testid="toast-context-store"
+        data-theme-integrated="true"
       >
         {JSON.stringify({
           showSuccess: showSuccessToast,
           showError: showErrorToast,
           showInfo: showInfoToast,
           showWarning: showWarningToast,
+          themeColors: brandColors,
         })}
       </div>
     </ToastContext.Provider>

@@ -30,6 +30,7 @@ import {
 import ProfileMenu from "./ProfileMenu";
 import { useUser } from "@/context/UserContext";
 import { useRouter } from "next/navigation";
+import { useNotifications } from "@/hooks/useNotifications";
 
 interface AppBarComponentProps {
   onSidebarToggle: () => void;
@@ -61,7 +62,7 @@ export default function AppBarComponent({
   const { user } = useUser();
   const router = useRouter();
   const isXs = useMediaQuery(theme.breakpoints.down("sm"));
-
+  const { unreadCount } = useNotifications();
   const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setProfileAnchorEl(event.currentTarget);
   };
@@ -208,7 +209,7 @@ export default function AppBarComponent({
                     }}
                   >
                     <Badge
-                      badgeContent={4}
+                      badgeContent={unreadCount}
                       color="error"
                       sx={{
                         "& .MuiBadge-badge": {
@@ -335,7 +336,7 @@ export default function AppBarComponent({
         >
           <ListItemIcon>
             <Badge
-              badgeContent={4}
+              badgeContent={unreadCount}
               color="error"
               sx={{ "& .MuiBadge-badge": { fontSize: "0.7rem" } }}
             >

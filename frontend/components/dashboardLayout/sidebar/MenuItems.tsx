@@ -46,6 +46,7 @@ import {
 } from "@mui/icons-material";
 import { usePageAccess } from "@/hooks/usePageAccess";
 import { UserRole } from "@/types/types";
+import { useNotifications } from "@/hooks/useNotifications";
 
 interface MenuItemsProps {
   collapsed: boolean;
@@ -113,7 +114,7 @@ export default function MenuItems({
 }: MenuItemsProps) {
   const theme = useTheme();
   const { userRoles, isLoading, shouldWait } = usePageAccess();
-
+  const { unreadCount, hasUnreadNotifications } = useNotifications();
   // Check user roles
   const hasRole = (roles: UserRole[]): boolean => {
     return roles.some((role) => userRoles.includes(role));
@@ -156,7 +157,8 @@ export default function MenuItems({
       title: "Notifications",
       icon: <NotificationAddSharp />,
       path: "/dashboard/notifications",
-      roles: ["ADMIN", "STAFF", "CUSTOMER"], // فقط ADMIN و STAFF
+      badge: unreadCount > 0 ? unreadCount : false,
+      roles: ["ADMIN", "STAFF", "CUSTOMER"],
     },
     {
       id: "profile",
