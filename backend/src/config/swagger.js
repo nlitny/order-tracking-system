@@ -311,7 +311,11 @@ const options = {
       {
         name: 'Admin Media Files',
         description: 'Admin/Staff media file management system.'
-      }
+      },
+      {
+        name: 'Users',
+        description: 'Update user role by Admin and customer dashboard endpoints.'
+      },
     ]
   },
   apis: [
