@@ -33,27 +33,30 @@ class CustomerMediaController {
     }
   }
 
-  async getOrderMedia(req, res, next) {
-    try {
-      const { id: orderId } = req.params;
-      const userId = req.user.id;
+async getOrderMedia(req, res, next) {
+  try {
+    const { id: orderId } = req.params;
+    const userId = req.user.id;
+    const userRole = req.user.role;
 
-      const mediaFiles = await customerMediaService.getCustomerMediaByOrder(
-        orderId, 
-        userId
-      );
+    const mediaFiles = await customerMediaService.getCustomerMediaByOrder(
+      orderId, 
+      userId,
+      userRole
+    );
 
-      res.status(200).json({
-        status: 'success',
-        data: {
-          mediaFiles,
-          count: mediaFiles.length
-        }
-      });
-    } catch (error) {
-      next(error);
-    }
+    res.status(200).json({
+      status: 'success',
+      data: {
+        mediaFiles,
+        count: mediaFiles.length
+      }
+    });
+  } catch (error) {
+    next(error);
   }
+}
+
 
   async deleteMedia(req, res, next) {
     try {

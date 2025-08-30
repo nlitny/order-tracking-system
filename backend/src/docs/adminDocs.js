@@ -122,13 +122,45 @@
  *                 value:
  *                   success: false
  *                   message: "All fields are required"
+ *               password_mismatch:
+ *                 summary: Password mismatch
+ *                 value:
+ *                   success: false
+ *                   message: "Passwords do not match"
+ *               email_exists:
+ *                 summary: Email already exists
+ *                 value:
+ *                   success: false
+ *                   message: "Email already exists"
  *       401:
  *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Access token required"
  *       403:
  *         description: Forbidden - only ADMIN allowed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Access denied. Required roles: ADMIN"
  *       500:
  *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Internal server error"
  */
+
 /**
  * @swagger
  * /api/v1/admin/users:
@@ -195,21 +227,41 @@
  *                         properties:
  *                           id:
  *                             type: string
+ *                             example: "clx1234567890"
  *                           email:
  *                             type: string
+ *                             example: "user@example.com"
  *                           firstName:
  *                             type: string
+ *                             example: "John"
  *                           lastName:
  *                             type: string
+ *                             example: "Doe"
+ *                           phone:
+ *                             type: string
+ *                             nullable: true
+ *                             example: "+1234567890"
+ *                           profilePicture:
+ *                             type: string
+ *                             nullable: true
+ *                             example: "https://cloudinary.com/image.jpg"
  *                           role:
  *                             type: string
+ *                             enum: [CUSTOMER, STAFF, ADMIN]
+ *                             example: "CUSTOMER"
  *                           isActive:
  *                             type: boolean
+ *                             example: true
+ *                           createdAt:
+ *                             type: string
+ *                             format: date-time
+ *                             example: "2025-08-29T10:30:00.000Z"
  *                           _count:
  *                             type: object
  *                             properties:
  *                               orders:
  *                                 type: integer
+ *                                 example: 5
  *                           orders:
  *                             type: array
  *                             items:
@@ -217,25 +269,62 @@
  *                               properties:
  *                                 id:
  *                                   type: string
+ *                                   example: "clx1234567891"
  *                                 orderNumber:
  *                                   type: string
+ *                                   example: "ORD-20250829-123456ABC"
  *                                 title:
  *                                   type: string
+ *                                   example: "Custom Website Design"
  *                                 status:
  *                                   type: string
+ *                                   enum: [PENDING, IN_PROGRESS, COMPLETED, CANCELLED, ON_HOLD]
+ *                                   example: "IN_PROGRESS"
+ *                                 createdAt:
+ *                                   type: string
+ *                                   format: date-time
+ *                                   example: "2025-08-29T10:30:00.000Z"
+ *                                 estimatedCompletion:
+ *                                   type: string
+ *                                   format: date-time
+ *                                   nullable: true
+ *                                   example: "2025-09-15T18:00:00.000Z"
  *                     pagination:
  *                       type: object
  *                       properties:
  *                         currentPage:
  *                           type: integer
+ *                           example: 1
  *                         totalPages:
  *                           type: integer
+ *                           example: 5
  *                         totalUsers:
  *                           type: integer
+ *                           example: 45
  *                         hasNextPage:
  *                           type: boolean
+ *                           example: true
  *                         hasPreviousPage:
  *                           type: boolean
+ *                           example: false
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Forbidden - only ADMIN allowed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 
 /**
@@ -243,7 +332,7 @@
  * /api/v1/admin/dashboard:
  *   get:
  *     summary: Get admin dashboard statistics
- *     description: Retrieve comprehensive dashboard data for admin panel
+ *     description: Retrieve comprehensive dashboard data for admin panel including order statistics, user counts, and recent orders
  *     tags: [Admin]
  *     security:
  *       - bearerAuth: []
@@ -269,23 +358,31 @@
  *                       properties:
  *                         total:
  *                           type: integer
+ *                           example: 150
  *                         pending:
  *                           type: integer
+ *                           example: 25
  *                         inProgress:
  *                           type: integer
+ *                           example: 45
  *                         completed:
  *                           type: integer
+ *                           example: 75
  *                     users:
  *                       type: object
  *                       properties:
  *                         admins:
  *                           type: integer
+ *                           example: 2
  *                         staff:
  *                           type: integer
+ *                           example: 5
  *                         customers:
  *                           type: integer
+ *                           example: 120
  *                         total:
  *                           type: integer
+ *                           example: 127
  *                     recentOrders:
  *                       type: array
  *                       items:
@@ -293,17 +390,52 @@
  *                         properties:
  *                           id:
  *                             type: string
+ *                             example: "clx1234567890"
  *                           orderNumber:
  *                             type: string
+ *                             example: "ORD-20250829-123456ABC"
  *                           title:
  *                             type: string
+ *                             example: "Custom Website Design"
  *                           status:
  *                             type: string
+ *                             enum: [PENDING, IN_PROGRESS, COMPLETED, CANCELLED, ON_HOLD]
+ *                             example: "PENDING"
+ *                           createdAt:
+ *                             type: string
+ *                             format: date-time
+ *                             example: "2025-08-29T10:30:00.000Z"
  *                           customer:
  *                             type: object
  *                             properties:
+ *                               id:
+ *                                 type: string
+ *                                 example: "clx1234567891"
  *                               firstName:
  *                                 type: string
+ *                                 example: "John"
  *                               lastName:
  *                                 type: string
+ *                                 example: "Doe"
+ *                               email:
+ *                                 type: string
+ *                                 example: "john.doe@example.com"
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Forbidden - only ADMIN allowed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */

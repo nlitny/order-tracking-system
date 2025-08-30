@@ -5,7 +5,6 @@ const { authenticateToken } = require('../middleware/auth');
 const { authorizeRoles } = require('../middleware/roles');
 const { upload } = require('../config/cloudinary');
 
-// Import swagger documentation
 require('../docs/customerMediaDocs');
 
 /**
