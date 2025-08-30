@@ -7,26 +7,30 @@ const { streamUpload } = require('../config/cloudinary');
 
 require('../docs/mediaFileDocs');
 
-router.use(authenticateToken);
-router.use(authorizeRoles('ADMIN', 'STAFF'));
-
 /**
  * Upload media files for an order (Admin/Staff only)
  * @desc    Upload media files with stream processing for admin and staff
  * @route   POST /api/v1/orders/:id/mediafiles
  * @access  Private (Admin/Staff only)
  */
-
-router.post('/:id/mediafiles',streamUpload.array('files', 20),mediaFileController.uploadMedia);
+router.post('/:id/mediafiles',
+  authenticateToken,
+  authorizeRoles('ADMIN', 'STAFF'),
+  streamUpload.array('files', 20),
+  mediaFileController.uploadMedia
+);
 
 /**
- * Get media files for an order (Admin/Staff only)
- * @desc    Get all media files for a specific order
+ * Get media files for an order 
+ * @desc    Get all media files for a specific order (Admin/Staff always, Customer only for completed orders)
  * @route   GET /api/v1/orders/:id/mediafiles
- * @access  Private (Admin/Staff only)
+ * @access  Private (Admin/Staff/Customer with restrictions)
  */
-
-router.get('/:id/mediafiles',mediaFileController.getOrderMedia);
+router.get('/:id/mediafiles',
+  authenticateToken, 
+  authorizeRoles("ADMIN", "STAFF", "CUSTOMER"), 
+  mediaFileController.getOrderMedia
+);
 
 /**
  * Update media file information (Admin/Staff only)
@@ -34,8 +38,11 @@ router.get('/:id/mediafiles',mediaFileController.getOrderMedia);
  * @route   PUT /api/v1/orders/:id/mediafiles/:mediaId
  * @access  Private (Admin/Staff only)
  */
-
-router.put('/:id/mediafiles/:mediaId', mediaFileController.updateMedia);
+router.put('/:id/mediafiles/:mediaId',
+  authenticateToken,
+  authorizeRoles('ADMIN', 'STAFF'),
+  mediaFileController.updateMedia
+);
 
 /**
  * Delete media file (Admin/Staff only)
@@ -43,7 +50,10 @@ router.put('/:id/mediafiles/:mediaId', mediaFileController.updateMedia);
  * @route   DELETE /api/v1/orders/:id/mediafiles/:mediaId
  * @access  Private (Admin/Staff only)
  */
-
-router.delete('/:id/mediafiles/:mediaId', mediaFileController.deleteMedia);
+router.delete('/:id/mediafiles/:mediaId',
+  authenticateToken,
+  authorizeRoles('ADMIN', 'STAFF'),
+  mediaFileController.deleteMedia
+);
 
 module.exports = router;

@@ -125,7 +125,12 @@ class MediaFileService {
   async getMediaFilesByOrder(orderId, userId) {
     try {
       const order = await prisma.order.findUnique({
-        where: { id: orderId }
+        where: { id: orderId },
+        include: {
+          customer: {
+            select: { id: true }
+          }
+        }
       });
 
       if (!order) {
@@ -136,7 +141,19 @@ class MediaFileService {
         where: { id: userId }
       });
 
-      if (!user || !['ADMIN', 'STAFF'].includes(user.role)) {
+      if (!user) {
+        throw new AppError('User not found', 404);
+      }
+
+      if (['ADMIN', 'STAFF'].includes(user.role)) {
+      } else if (user.role === 'CUSTOMER') {
+        if (order.customerId !== userId) {
+          throw new AppError('Access denied. You can only view media files for your own orders', 403);
+        }
+        if (order.status !== 'COMPLETED') {
+          throw new AppError('Access denied. Media files are only available for completed orders', 403);
+        }
+      } else {
         throw new AppError('Access denied', 403);
       }
 

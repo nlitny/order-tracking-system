@@ -336,7 +336,7 @@
  *                   example: "Error uploading media files"
  *
  *   get:
- *     summary: Get media files for an order (Admin/Staff only)
+ *     summary: Get media files for an order (Admin/Staff only and CUSTOMER when Status Completed)
  *     description: |
  *       Retrieve all media files uploaded by admin/staff for a specific order.
  *       

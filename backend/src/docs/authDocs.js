@@ -234,12 +234,12 @@
  *             email_check:
  *               summary: Initial email check
  *               value:
- *                 email: "user@example.com"
+ *                 email: "admin@gmail.com"
  *             existing_user_login:
  *               summary: Existing user login
  *               value:
- *                 email: "user@example.com"
- *                 password: "password123"
+ *                 email: "admin@gmail.com"
+ *                 password: "password1234"
  *             new_user_register:
  *               summary: New user registration
  *               value:
@@ -765,7 +765,7 @@
  *           schema:
  *             $ref: '#/components/schemas/ChangePasswordRequest'
  *           example:
- *             currentPassword: "oldPassword123"
+ *             currentPassword: "password123"
  *             newPassword: "newPassword456"
  *     responses:
  *       200:
