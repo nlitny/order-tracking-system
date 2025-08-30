@@ -10,6 +10,7 @@ const notFoundHandler = require("./src/middleware/notFound");
 const authRoutes = require("./src/routes/auth");
 const orderRoutes = require("./src/routes/orders");
 const customerMediaRoutes = require("./src/routes/customerMedia");
+const userRoutes = require("./src/routes/users"); 
 const adminRoutes = require("./src/routes/admin");
 const mediaFile = require("./src/routes/mediaFile");
 const notificationRoutes = require("./src/routes/notification");
@@ -40,9 +41,11 @@ app.use("/api/v1/orders", orderRoutes);
 app.use("/api/v1/orders", customerMediaRoutes);
 app.use("/api/v1/orders", mediaFile);
 app.use("/api/v1/admin", adminRoutes);
+app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/notifications", notificationRoutes);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
 seed();
+
 module.exports = app;

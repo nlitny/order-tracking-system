@@ -129,3 +129,181 @@
  *       500:
  *         description: Internal server error
  */
+/**
+ * @swagger
+ * /api/v1/admin/users:
+ *   get:
+ *     summary: Get all users with their orders (Admin only)
+ *     description: Retrieve a paginated list of all users with their order information
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 10
+ *         description: Number of users per page
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search in firstName, lastName, email
+ *       - in: query
+ *         name: role
+ *         schema:
+ *           type: string
+ *           enum: [CUSTOMER, STAFF, ADMIN]
+ *         description: Filter by user role
+ *       - in: query
+ *         name: isActive
+ *         schema:
+ *           type: string
+ *           enum: [true, false]
+ *         description: Filter by user active status
+ *     responses:
+ *       200:
+ *         description: Users retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Users with orders retrieved successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     users:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                           email:
+ *                             type: string
+ *                           firstName:
+ *                             type: string
+ *                           lastName:
+ *                             type: string
+ *                           role:
+ *                             type: string
+ *                           isActive:
+ *                             type: boolean
+ *                           _count:
+ *                             type: object
+ *                             properties:
+ *                               orders:
+ *                                 type: integer
+ *                           orders:
+ *                             type: array
+ *                             items:
+ *                               type: object
+ *                               properties:
+ *                                 id:
+ *                                   type: string
+ *                                 orderNumber:
+ *                                   type: string
+ *                                 title:
+ *                                   type: string
+ *                                 status:
+ *                                   type: string
+ *                     pagination:
+ *                       type: object
+ *                       properties:
+ *                         currentPage:
+ *                           type: integer
+ *                         totalPages:
+ *                           type: integer
+ *                         totalUsers:
+ *                           type: integer
+ *                         hasNextPage:
+ *                           type: boolean
+ *                         hasPreviousPage:
+ *                           type: boolean
+ */
+
+/**
+ * @swagger
+ * /api/v1/admin/dashboard:
+ *   get:
+ *     summary: Get admin dashboard statistics
+ *     description: Retrieve comprehensive dashboard data for admin panel
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Dashboard data retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Admin dashboard data retrieved successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     orders:
+ *                       type: object
+ *                       properties:
+ *                         total:
+ *                           type: integer
+ *                         pending:
+ *                           type: integer
+ *                         inProgress:
+ *                           type: integer
+ *                         completed:
+ *                           type: integer
+ *                     users:
+ *                       type: object
+ *                       properties:
+ *                         admins:
+ *                           type: integer
+ *                         staff:
+ *                           type: integer
+ *                         customers:
+ *                           type: integer
+ *                         total:
+ *                           type: integer
+ *                     recentOrders:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                           orderNumber:
+ *                             type: string
+ *                           title:
+ *                             type: string
+ *                           status:
+ *                             type: string
+ *                           customer:
+ *                             type: object
+ *                             properties:
+ *                               firstName:
+ *                                 type: string
+ *                               lastName:
+ *                                 type: string
+ */

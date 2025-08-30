@@ -36,6 +36,33 @@ class AdminController {
       next(error);
     }
   }
+  async getAllUsersWithOrders(req, res, next) {
+  try {
+    const { page, limit, search, role, isActive } = req.query;
+    
+    const filters = { search, role, isActive };
+    const pagination = {
+      page: parseInt(page) || 1,
+      limit: parseInt(limit) || 10
+    };
+
+    const result = await adminService.getAllUsersWithOrders(filters, pagination);
+    
+    return successResponse(res, "Users with orders retrieved successfully", result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async getAdminDashboard(req, res, next) {
+  try {
+    const dashboardData = await adminService.getAdminDashboard();
+    
+    return successResponse(res, "Admin dashboard data retrieved successfully", dashboardData);
+  } catch (error) {
+    next(error);
+  }
+}
 }
 
 module.exports = new AdminController();

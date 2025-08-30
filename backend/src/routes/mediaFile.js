@@ -16,11 +16,8 @@ router.use(authorizeRoles('ADMIN', 'STAFF'));
  * @route   POST /api/v1/orders/:id/mediafiles
  * @access  Private (Admin/Staff only)
  */
-router.post(
-  '/:id/mediafiles',  
-  streamUpload.array('files', 20),
-  mediaFileController.uploadMedia
-);
+
+router.post('/:id/mediafiles',streamUpload.array('files', 20),mediaFileController.uploadMedia);
 
 /**
  * Get media files for an order (Admin/Staff only)
@@ -28,10 +25,8 @@ router.post(
  * @route   GET /api/v1/orders/:id/mediafiles
  * @access  Private (Admin/Staff only)
  */
-router.get(
-  '/:id/mediafiles',  
-  mediaFileController.getOrderMedia
-);
+
+router.get('/:id/mediafiles',mediaFileController.getOrderMedia);
 
 /**
  * Update media file information (Admin/Staff only)
@@ -39,10 +34,8 @@ router.get(
  * @route   PUT /api/v1/orders/:id/mediafiles/:mediaId
  * @access  Private (Admin/Staff only)
  */
-router.put(
-  '/:id/mediafiles/:mediaId',  
-  mediaFileController.updateMedia
-);
+
+router.put('/:id/mediafiles/:mediaId', mediaFileController.updateMedia);
 
 /**
  * Delete media file (Admin/Staff only)
@@ -50,9 +43,7 @@ router.put(
  * @route   DELETE /api/v1/orders/:id/mediafiles/:mediaId
  * @access  Private (Admin/Staff only)
  */
-router.delete(
-  '/:id/mediafiles/:mediaId', 
-  mediaFileController.deleteMedia
-);
+
+router.delete('/:id/mediafiles/:mediaId', mediaFileController.deleteMedia);
 
 module.exports = router;

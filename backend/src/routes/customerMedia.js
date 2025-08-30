@@ -16,11 +16,7 @@ router.use(authenticateToken);
  * @route   POST /api/v1/orders/:id/customermedia
  * @access  Private (Customer only)
  */
-router.post(
-  '/:id/customermedia',
-  upload.array('files', 10), 
-  customerMediaController.uploadMedia
-);
+router.post('/:id/customermedia',upload.array('files', 10), customerMediaController.uploadMedia);
 
 /**
  * Get customer media files for an order
@@ -28,10 +24,7 @@ router.post(
  * @route   GET /api/v1/orders/:id/customermedia
  * @access  Private (Customer only)
  */
-router.get(
-  '/:id/customermedia',
-  customerMediaController.getOrderMedia
-);
+router.get('/:id/customermedia',customerMediaController.getOrderMedia);
 
 /**
  * Delete customer media file
@@ -39,9 +32,6 @@ router.get(
  * @route   DELETE /api/v1/orders/customermedia/:mediaId
  * @access  Private (Customer only)
  */
-router.delete(
-  '/customermedia/:mediaId',
-  customerMediaController.deleteMedia
-);
+router.delete('/customermedia/:mediaId',customerMediaController.deleteMedia);
 
 module.exports = router;
