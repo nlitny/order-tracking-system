@@ -1,11 +1,9 @@
 
-// controllers/notificationController.js
 const notificationService = require('../services/notificationService');
 const { successResponse, errorResponse } = require('../utils/responses');
 const { asyncHandler } = require('../utils/asyncHandler');
 
 class NotificationController {
-  // گرفتن تمام اعلان‌های کاربر
   getAllNotifications = asyncHandler(async (req, res) => {
     const userId = req.user.id;
     const { page = 1, limit = 20 } = req.query;
@@ -23,7 +21,6 @@ class NotificationController {
     );
   });
 
-  // علامت‌گذاری اعلان به عنوان خوانده شده
   markAsRead = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
@@ -37,7 +34,6 @@ class NotificationController {
     );
   });
 
-  // گرفتن تعداد اعلان‌های خوانده نشده
   getUnreadCount = asyncHandler(async (req, res) => {
     const userId = req.user.id;
     const count = await notificationService.getUnreadCount(userId);

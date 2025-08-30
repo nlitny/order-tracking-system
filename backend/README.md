@@ -1,5 +1,5 @@
 
-# 🧙‍♂️ Order Status Tracking System
+#  Order Status Tracking System
 
 A comprehensive **Order Tracking System** designed for managing spell orders with real-time status updates, secure file management, and role-based access control. Built with modern technologies and enterprise-grade security.
 
@@ -9,33 +9,33 @@ A comprehensive **Order Tracking System** designed for managing spell orders wit
 [![Prisma](https://img.shields.io/badge/Prisma-3982CE?style=for-the-badge&logo=Prisma&logoColor=white)](https://prisma.io/)
 [![JWT](https://img.shields.io/badge/JWT-black?style=for-the-badge&logo=JSON%20web%20tokens)](https://jwt.io/)
 
-## 🌟 Features
+##  Features
 
-### 🔍 **Order Status Tracking**
+### **Order Status Tracking**
 - **Real-time status updates**: `PENDING` → `IN_PROGRESS` → `COMPLETED`
 - **Comprehensive order history** with timestamps
 - **Smart notifications** for status changes
 - **Advanced search & filter** functionality
 
-### 📁 **Media Management**
+### **Media Management**
 - **Secure file storage** via Cloudinary integration
 - **Multi-format support**: Images, Videos, Documents
 - **Staff media uploads** with progress reports
 - **Customer access** to completed order files
 
-### 🔐 **Security & Authentication**
+###  **Security & Authentication**
 - **JWT-based authentication** with refresh tokens
 - **Role-based access control** (Customer/Staff/Admin)
 - **Rate limiting** and request validation
 - **Password encryption** with bcryptjs
 
-### 📊 **Admin Dashboard**
+###  **Admin Dashboard**
 - **User management** with role assignments
 - **Order analytics** and reporting
 - **System health monitoring**
 - **Comprehensive logging**
 
-## 🛠️ Technology Stack
+##  Technology Stack
 
 ### **Backend Core**
 - **Node.js** - JavaScript runtime environment
@@ -66,7 +66,7 @@ A comprehensive **Order Tracking System** designed for managing spell orders wit
 - **Morgan** - HTTP request logger
 - **UUID** - Unique identifier generation
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Prerequisites
 
@@ -146,7 +146,7 @@ npm start
 
 The server will start on `http://localhost:3000`
 
-## 📚 API Documentation
+##  API Documentation
 
 ### **Interactive Documentation**
 Visit `http://localhost:3000/api-docs` for comprehensive Swagger UI documentation with:
@@ -160,7 +160,7 @@ bash
 GET /health
 Returns server status and system information.
 
-## 🔗 API Endpoints Overview
+##  API Endpoints Overview
 
 ### **Authentication** (`/api/v1/auth`)
 - `POST /register` - User registration
@@ -198,30 +198,30 @@ Returns server status and system information.
 - `PATCH /notifications/:id/read` - Mark as read
 - `DELETE /notifications/:id` - Delete notification
 
-## 🎭 User Roles & Permissions
+## User Roles & Permissions
 
-### **👤 CUSTOMER**
+### ** CUSTOMER**
 - Create and manage their own orders
 - View order history and status
 - Upload reference files
 - Access completed order media
 - Receive notifications
 
-### **👨‍💼 STAFF**
+### ** STAFF**
 - View all orders assigned to them
 - Update order status
 - Upload progress media files
 - Add order notes and reports
 - Manage order workflow
 
-### **👑 ADMIN**
+### ** ADMIN**
 - Full system access
 - User management and role assignment
 - System analytics and reporting
 - Global order management
 - System configuration
 
-## 📱 Order Status Workflow
+## Order Status Workflow
 
 
 PENDING → IN_PROGRESS → COMPLETED
@@ -235,7 +235,7 @@ CANCELLED ← ON_HOLD
 - **CANCELLED** - Order cancelled by customer or admin
 - **ON_HOLD** - Temporarily paused, awaiting information
 
-## 🗄️ Database Schema
+## Database Schema
 
 ### **Core Models:**
 
@@ -276,7 +276,7 @@ model Order {
   orderHistory        OrderHistory[]
 }
 
-## 📦 Available Scripts
+##  Available Scripts
 
 bash
 # Development
@@ -296,7 +296,7 @@ npm run db:generate      # Generate Prisma client
 npm run db:migrate       # Apply migrations
 npm run db:studio        # Database GUI
 
-## 🔧 Configuration
+## Configuration
 
 ### **File Upload Settings**
 javascript
@@ -318,7 +318,7 @@ const rateLimit = {
   message: "Too many requests"
 }
 
-## 🧪 Testing
+##  Testing
 
 ### **Manual Testing**
 Use the Swagger UI interface at `http://localhost:3000/api-docs` to test endpoints interactively.
@@ -342,7 +342,7 @@ bash
 curl -X GET http://localhost:3000/api/v1/orders/ORDER_ID \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 
-## 🚨 Error Handling
+## Error Handling
 
 The API uses standard HTTP status codes and provides detailed error messages:
 
@@ -372,7 +372,7 @@ json
 - `429` - Too Many Requests
 - `500` - Internal Server Error
 
-## 📊 Monitoring & Logs
+## Monitoring & Logs
 
 ### **Health Check**
 Monitor system health at `/health`:
@@ -392,7 +392,7 @@ Logs are written to:
 - **Files** (production)
 - **Error tracking** service (optional)
 
-## 🔒 Security Features
+##  Security Features
 
 - **JWT Authentication** with refresh token rotation
 - **Password Hashing** using bcryptjs
@@ -403,7 +403,7 @@ Logs are written to:
 - **CORS Configuration** for cross-origin requests
 - **Security Headers** via Helmet.js
 
-## 🤝 Contributing
+##  Contributing
 
 1. **Fork** the repository
 2. **Create** a feature branch: `git checkout -b feature/amazing-feature`
@@ -417,7 +417,7 @@ Logs are written to:
 - Write **descriptive commit messages**
 - Add **comments** for complex logic
 
-## 📄 License
+##  License
 
 This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
 
