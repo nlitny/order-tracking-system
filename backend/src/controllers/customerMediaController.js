@@ -38,12 +38,13 @@ async getOrderMedia(req, res, next) {
     const { id: orderId } = req.params;
     const userId = req.user.id;
     const userRole = req.user.role;
+    
 
     const mediaFiles = await customerMediaService.getCustomerMediaByOrder(
-      orderId, 
-      userId,
-      userRole
-    );
+    orderId, 
+    userId,
+    userRole 
+  );
 
     res.status(200).json({
       status: 'success',

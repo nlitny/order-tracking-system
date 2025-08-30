@@ -122,42 +122,49 @@ class CustomerMediaService {
     }
   }
 
-  async getCustomerMediaByOrder(orderId, userId) {
-    try {
-      const order = await prisma.order.findUnique({
-        where: { id: orderId }
-      });
+async getCustomerMediaByOrder(orderId, userId, userRole) {
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId }
+    });
 
-      if (!order) {
-        throw new AppError('Order not found', 404);
-      }
-
-      if (order.customerId !== userId) {
-        throw new AppError('Access denied', 403);
-      }
-
-      const mediaFiles = await prisma.customerMedia.findMany({
-        where: { orderId },
-        orderBy: { createdAt: 'desc' },
-        select: {
-          id: true,
-          fileName: true,
-          originalName: true,
-          mimeType: true,
-          size: true,
-          fileType: true,
-          path: true,
-          cloudinaryId: true, 
-          createdAt: true
-        }
-      });
-
-      return mediaFiles;
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-      throw new AppError('Error retrieving media files', 500);
+    if (!order) {
+      throw new AppError('Order not found', 404);
     }
+
+    if (userRole === 'ADMIN' || userRole === 'STAFF') {
+    } 
+    else if (userRole === 'CUSTOMER') {
+      if (order.customerId !== userId) {
+        throw new AppError('Access denied. You can only view your own order media files', 403);
+      }
+    } 
+    else {
+      throw new AppError('Access denied', 403);
+    }
+
+    const mediaFiles = await prisma.customerMedia.findMany({
+      where: { orderId },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        fileName: true,
+        originalName: true,
+        mimeType: true,
+        size: true,
+        fileType: true,
+        path: true,
+        cloudinaryId: true, 
+        createdAt: true
+      }
+    });
+
+    return mediaFiles;
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw new AppError('Error retrieving media files', 500);
   }
+}
 
   async deleteCustomerMedia(mediaId, userId) {
     try {

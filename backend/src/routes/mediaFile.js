@@ -38,7 +38,7 @@ router.get('/:id/mediafiles',
  * @route   PUT /api/v1/orders/:id/mediafiles/:mediaId
  * @access  Private (Admin/Staff only)
  */
-router.put('/:id/mediafiles/:mediaId',
+router.put('/mediafiles/:mediaId',
   authenticateToken,
   authorizeRoles('ADMIN', 'STAFF'),
   mediaFileController.updateMedia
@@ -50,7 +50,7 @@ router.put('/:id/mediafiles/:mediaId',
  * @route   DELETE /api/v1/orders/:id/mediafiles/:mediaId
  * @access  Private (Admin/Staff only)
  */
-router.delete('/:id/mediafiles/:mediaId',
+router.delete('/mediafiles/:mediaId',
   authenticateToken,
   authorizeRoles('ADMIN', 'STAFF'),
   mediaFileController.deleteMedia
