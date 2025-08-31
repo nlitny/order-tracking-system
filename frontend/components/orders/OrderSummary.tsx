@@ -1,4 +1,3 @@
-// components/orders/OrderSummary.tsx
 "use client";
 import React from "react";
 import {
@@ -424,7 +423,6 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
         </Card>
       )}
 
-      {/* Current Step Indicator */}
       <Paper
         variant="outlined"
         sx={{

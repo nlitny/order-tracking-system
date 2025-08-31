@@ -1,10 +1,13 @@
-// components/permissions.ts
 import { PageAccess, UserRole } from "@/types/types";
 
 export const PAGE_PERMISSIONS: PageAccess[] = [
   // Admin routes
   {
-    path: "/dashboard/admin/adminlist",
+    path: "/dashboard/admin/users",
+    allowedRoles: ["ADMIN"],
+  },
+  {
+    path: "/dashboard/admin/register",
     allowedRoles: ["ADMIN"],
   },
   {

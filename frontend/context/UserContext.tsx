@@ -1,4 +1,3 @@
-// contexts/UserContext.tsx
 "use client";
 import React, {
   createContext,
@@ -13,7 +12,6 @@ import { useSession } from "next-auth/react";
 import axiosInstance from "@/lib/axios/csrAxios";
 import { UserRole } from "@/types/types";
 
-// Essential User Data Types - فقط اطلاعات ضروری
 export interface UserData {
   id: string;
   email: string;
@@ -27,7 +25,6 @@ export interface UserData {
   updatedAt?: string;
 }
 
-// API Response type
 interface ProfileApiResponse {
   success: boolean;
   message: string;
@@ -68,7 +65,7 @@ interface UserProviderProps {
 
 // Configuration
 const CONFIG = {
-  AUTO_REFRESH_INTERVAL: 5 * 60 * 1000, // 5 دقیقه
+  AUTO_REFRESH_INTERVAL: 5 * 60 * 1000,
   MAX_RETRY_ATTEMPTS: 3,
   RETRY_DELAY: 2000,
   SESSION_SETTLE_TIME: 500,
@@ -87,8 +84,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const abortControllerRef = useRef<AbortController | null>(null);
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const isInitializedRef = useRef(false);
-  const isFetchingRef = useRef(false); // 🔴 جلوگیری از multiple fetch
-  const lastFetchTimeRef = useRef<number>(0); // 🔴 جلوگیری از درخواست های مکرر
+  const isFetchingRef = useRef(false);
+  const lastFetchTimeRef = useRef<number>(0);
   const retryCountRef = useRef<number>(0);
 
   // Computed values
@@ -125,24 +122,18 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     };
   }, []);
 
-  // 🔴 اصلاح شده - جلوگیری از infinite loop
   const fetchUser = useCallback(
     async (force: boolean = false): Promise<void> => {
-      // جلوگیری از درخواست مکرر
       if (isFetchingRef.current && !force) {
-        console.log("🚫 Fetch already in progress, skipping...");
         return;
       }
 
-      // جلوگیری از درخواست های خیلی نزدیک به هم (حداقل 1 ثانیه فاصله)
       const now = Date.now();
       if (!force && now - lastFetchTimeRef.current < 1000) {
-        console.log("🚫 Too frequent fetch request, skipping...");
         return;
       }
 
       if (status !== "authenticated" || !session?.user?.accessToken) {
-        console.log("🚫 Not authenticated or no access token");
         return;
       }
 
@@ -159,8 +150,6 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       abortControllerRef.current = new AbortController();
 
       try {
-        console.log("🔄 Fetching user profile...");
-
         const response = await axiosInstance.get<ProfileApiResponse>(
           "/auth/profile",
           {
@@ -183,28 +172,18 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         setIsError(false);
         setError(null);
         retryCountRef.current = 0; // Reset retry count on success
-
-        console.log("✅ User profile fetched successfully:", userData);
       } catch (err: any) {
         if (err.name === "AbortError" || err.code === "ERR_CANCELED") {
-          console.log("🚫 Request was canceled");
           return;
         }
 
-        console.error("❌ Error fetching user:", err);
-
-        // Handle different error types
         const status = err.response?.status;
 
         if (status === 401) {
-          // Unauthorized - clear user and session
-          console.error("🚫 Unauthorized access - clearing user data");
           setUser(null);
           setState(UserState.UNAUTHENTICATED);
           clearInterval(refreshIntervalRef.current!);
         } else if (status === 403) {
-          // Forbidden - don't retry, but keep current user data
-          console.error("🚫 Forbidden access - keeping current user data");
           setIsError(true);
           setError(err);
           // Don't change state if we have user data
@@ -218,16 +197,13 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
           if (retryCountRef.current <= CONFIG.MAX_RETRY_ATTEMPTS) {
             const delay =
               CONFIG.RETRY_DELAY * Math.pow(2, retryCountRef.current - 1);
-            console.log(
-              `🔄 Retrying in ${delay}ms (attempt ${retryCountRef.current}/${CONFIG.MAX_RETRY_ATTEMPTS})`
-            );
 
             setTimeout(() => {
               fetchUser(true);
             }, delay);
             return;
           } else {
-            console.error("❌ Max retry attempts reached");
+            console.error("Max retry attempts reached");
           }
         }
 
@@ -245,7 +221,6 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     [status, session?.user?.accessToken, extractEssentialUserData, user]
   );
 
-  // 🔴 اصلاح شده - حذف recursive call
   const updateUserSession = useCallback(async (): Promise<void> => {
     if (!session?.user || !user) {
       console.warn("No session or user data to update");
@@ -253,8 +228,6 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     }
 
     try {
-      console.log("🔄 Updating session...");
-
       await updateSession({
         ...session,
         user: {
@@ -267,24 +240,19 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
           phone: user.phone,
         },
       });
-
-      console.log("✅ Session updated successfully");
     } catch (error) {
-      console.error("❌ Failed to update session:", error);
+      console.error("Failed to update session:", error);
     }
   }, [session, user, updateSession]);
 
-  // 🔴 اصلاح شده - حذف recursive call
   const updateUser = useCallback(
     (userData: UserData) => {
-      console.log("🔄 Updating user data:", userData);
       setUser(userData);
 
       if (state !== UserState.AUTHENTICATED) {
         setState(UserState.AUTHENTICATED);
       }
 
-      // فقط session را آپدیت کن بدون dependency loop
       updateUserSession().catch(console.error);
     },
     [state, updateUserSession]
@@ -292,7 +260,6 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
   // Clear user data
   const clearUser = useCallback(() => {
-    console.log("🧹 Clearing user data");
     cancelOperations();
     setUser(null);
     setState(UserState.UNAUTHENTICATED);
@@ -301,7 +268,6 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     retryCountRef.current = 0;
   }, [cancelOperations]);
 
-  // 🔴 اصلاح شده - Auto refresh بدون loop
   const startAutoRefresh = useCallback(() => {
     if (refreshIntervalRef.current) {
       clearInterval(refreshIntervalRef.current);
@@ -312,15 +278,13 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         status === "authenticated" &&
         session?.user?.accessToken &&
         state === UserState.AUTHENTICATED &&
-        !isFetchingRef.current // فقط اگر درحال fetch نباشیم
+        !isFetchingRef.current
       ) {
-        console.log("🔄 Auto-refreshing user data...");
-
         try {
           const response = await axiosInstance.get<ProfileApiResponse>(
             "/auth/profile",
             {
-              timeout: 5000, // کاهش timeout برای auto-refresh
+              timeout: 5000,
               headers: {
                 Authorization: `Bearer ${session.user.accessToken}`,
               },
@@ -332,31 +296,25 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
               response.data.data.user
             );
 
-            // فقط در صورت تغییر واقعی داده‌ها آپدیت کن
             const hasChanges =
               JSON.stringify(user) !== JSON.stringify(newUserData);
 
             if (hasChanges) {
-              console.log("📱 User data changed, updating...");
               setUser(newUserData);
             } else {
-              console.log("✅ User data is up to date");
+              console.log(" User data is up to date");
             }
           }
         } catch (error: any) {
           const status = error.response?.status;
           if (status === 401) {
-            // Token expired, clear user
-            console.error("🚫 Token expired during auto-refresh");
             clearUser();
           } else {
-            console.error("❌ Auto-refresh failed:", error.message);
+            console.error(" Auto-refresh failed:", error.message);
           }
         }
       }
     }, CONFIG.AUTO_REFRESH_INTERVAL);
-
-    console.log("⏰ Auto-refresh started (every 5 minutes)");
   }, [
     status,
     session?.user?.accessToken,
@@ -370,11 +328,9 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     if (refreshIntervalRef.current) {
       clearInterval(refreshIntervalRef.current);
       refreshIntervalRef.current = null;
-      console.log("⏹️ Auto-refresh stopped");
     }
   }, []);
 
-  // 🔴 اصلاح شده - Handle session changes بدون infinite loop
   useEffect(() => {
     const handleSessionChange = async () => {
       console.log("🔄 Session status changed:", status);
@@ -388,26 +344,21 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
         case "authenticated":
           if (!session?.user?.accessToken) {
-            console.warn("⚠️ No access token in session");
             clearUser();
             stopAutoRefresh();
             break;
           }
 
-          // فقط در صورت عدم وجود user یا عدم initialization
           if (!isInitializedRef.current || (!user && !isFetchingRef.current)) {
-            console.log("✅ Authenticated, fetching user profile...");
             await fetchUser();
             startAutoRefresh();
             isInitializedRef.current = true;
           } else if (user && !refreshIntervalRef.current) {
-            // اگر user موجود است اما auto-refresh فعال نیست
             startAutoRefresh();
           }
           break;
 
         case "unauthenticated":
-          console.log("❌ Unauthenticated");
           clearUser();
           stopAutoRefresh();
           isInitializedRef.current = false;
@@ -419,8 +370,6 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   }, [
     status,
     session?.user?.accessToken,
-    // 🔴 حذف user از dependency ها تا از infinite loop جلوگیری شود
-    // user,
     fetchUser,
     clearUser,
     startAutoRefresh,
@@ -463,7 +412,6 @@ export const useUser = (): UserContextType => {
   return context;
 };
 
-// Enhanced utility hooks (بدون تغییر)
 export const useUserData = () => {
   const { user, loading, isError, state, isAuthenticated, isSessionReady } =
     useUser();
@@ -489,7 +437,6 @@ export const useUserData = () => {
   };
 };
 
-// Auth state hook (بدون تغییر)
 export const useAuthState = () => {
   const { state, loading, isAuthenticated, isSessionReady } = useUser();
 

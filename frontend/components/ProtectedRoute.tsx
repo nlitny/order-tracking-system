@@ -1,4 +1,3 @@
-// components/ProtectedRoute.tsx
 "use client";
 
 import { useSession, signOut } from "next-auth/react";
@@ -15,15 +14,14 @@ import { useUser, useAuthState } from "@/context/UserContext";
 import { checkPageAccess } from "@/components/permissions";
 import { UserRole } from "@/types/types";
 
-// Types aligned with our authentication system
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRoles?: UserRole[]; // تغییر به UserRole[]
+  requiredRoles?: UserRole[];
   fallbackPath?: string;
   timeout?: number;
   showErrorDetails?: boolean;
   allowUnauthenticated?: boolean;
-  usePagePermissions?: boolean; // آپشن جدید برای استفاده از سیستم permissions
+  usePagePermissions?: boolean;
 }
 
 type AuthStatus =
@@ -32,7 +30,7 @@ type AuthStatus =
   | "unauthorized"
   | "error"
   | "session_expired"
-  | "access_denied"; // حالت جدید برای عدم دسترسی
+  | "access_denied";
 
 // Enhanced Type Guard for session validation
 function isValidAuthenticatedSession(session: any): boolean {
@@ -56,7 +54,7 @@ function useAuthProtection(
   fallbackPath = "/auth",
   timeout = 15000,
   allowUnauthenticated = false,
-  usePagePermissions = true // به طور پیش‌فرض از سیستم permissions استفاده کند
+  usePagePermissions = true
 ) {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -94,10 +92,8 @@ function useAuthProtection(
           url.searchParams.set("message", encodeURIComponent(customMessage));
         }
 
-        console.log(`🔄 Redirecting to: ${url.toString()}`);
         router.replace(url.toString());
       } catch (err) {
-        console.error("❌ Error in redirect:", err);
         // Fallback redirect without query params
         router.replace(path);
       }
@@ -111,7 +107,6 @@ function useAuthProtection(
 
     const timeoutId = setTimeout(() => {
       if (!isReady && !allowUnauthenticated) {
-        console.warn("⏰ Authentication timeout reached");
         setTimeoutReached(true);
         setError("Authentication timeout. Please try again.");
         setAuthStatus("error");
@@ -131,21 +126,8 @@ function useAuthProtection(
       try {
         setError(null);
 
-        console.log("🔍 Auth State Check:", {
-          sessionStatus: status,
-          userState,
-          isSessionReady,
-          isAuthenticated,
-          hasUser: !!user,
-          hasSession: !!session,
-          allowUnauthenticated,
-          usePagePermissions,
-          currentPath: pathname,
-        });
-
         // Handle loading states
         if (!isSessionReady || isInitializing || userLoading) {
-          console.log("⏳ Still loading authentication state...");
           setAuthStatus("loading");
           setLocalLoading(true);
           return;
@@ -153,7 +135,6 @@ function useAuthProtection(
 
         // Handle timeout
         if (timeoutReached) {
-          console.log("⏰ Timeout reached");
           setAuthStatus("error");
           setLocalLoading(false);
           return;
@@ -161,10 +142,7 @@ function useAuthProtection(
 
         // Handle unauthenticated state
         if (status === "unauthenticated" || shouldShowLogin) {
-          console.log("❌ User is unauthenticated");
-
           if (allowUnauthenticated) {
-            console.log("✅ Unauthenticated access allowed");
             setAuthStatus("authorized");
             setLocalLoading(false);
             return;
@@ -184,7 +162,6 @@ function useAuthProtection(
         if (status === "authenticated") {
           // Check session validity
           if (!isValidAuthenticatedSession(session)) {
-            console.log("❌ Invalid session structure");
             await signOut({ redirect: false });
             setAuthStatus("session_expired");
             redirectWithError(
@@ -197,8 +174,6 @@ function useAuthProtection(
 
           // Handle session errors (like token expiration)
           if (session?.error) {
-            console.log("❌ Session has error:", session.error);
-
             let errorMessage = "Authentication error occurred";
             let errorType = "auth_error";
 
@@ -218,7 +193,6 @@ function useAuthProtection(
 
           // Check if user is active
           if (session.user.isActive === false) {
-            console.log("❌ User account is inactive");
             setAuthStatus("unauthorized");
             redirectWithError(
               "/account-inactive",
@@ -230,7 +204,6 @@ function useAuthProtection(
 
           // Wait for user context to load if we have session but no user data yet
           if (!user && !userError) {
-            console.log("⏳ Waiting for user context to load...");
             setAuthStatus("loading");
             setLocalLoading(true);
             return;
@@ -238,7 +211,6 @@ function useAuthProtection(
 
           // Handle user context errors
           if (userError) {
-            console.log("❌ User context error");
             setError("Failed to load user profile");
             setAuthStatus("error");
             setLocalLoading(false);
@@ -247,24 +219,14 @@ function useAuthProtection(
 
           // Get user role
           const userRole = user?.role || session.user.role;
-
-          // استفاده از سیستم permissions (اولویت اول)
           if (usePagePermissions) {
-            console.log("🔐 Checking page access with permissions system:", {
-              path: pathname,
-              userRole: userRole,
-            });
-
             const hasPageAccess = checkPageAccess(pathname, [
               userRole as UserRole,
             ]);
 
             if (!hasPageAccess) {
-              console.log("❌ Access denied by permissions system");
               setAuthStatus("access_denied");
               setLocalLoading(false);
-
-              // ریدایرکت به صفحه مناسب بر اساس نقش کاربر
               if (userRole === "ADMIN") {
                 router.replace("/dashboard/admin");
               } else if (userRole === "STAFF") {
@@ -276,46 +238,29 @@ function useAuthProtection(
               }
               return;
             }
-
-            console.log("✅ Page access granted by permissions system");
-          }
-          // استفاده از requiredRoles (اولویت دوم)
-          else if (requiredRoles && requiredRoles.length > 0) {
-            console.log("🔐 Checking role-based access:", {
-              required: requiredRoles,
-              userRole: userRole,
-              sessionRole: session.user.role,
-            });
-
+          } else if (requiredRoles && requiredRoles.length > 0) {
             const hasRequiredRole = requiredRoles.includes(
               userRole as UserRole
             );
 
             if (!hasRequiredRole) {
-              console.log("❌ User doesn't have required roles");
               setAuthStatus("access_denied");
               setLocalLoading(false);
               router.replace("/unauthorized");
               return;
             }
-
-            console.log("✅ Role check passed");
           }
 
-          // All checks passed
-          console.log("✅ Authentication and authorization successful");
           setAuthStatus("authorized");
           setLocalLoading(false);
           return;
         }
 
         // Handle unexpected states
-        console.warn("⚠️ Unexpected auth status:", status);
         setError("Unexpected authentication state");
         setAuthStatus("error");
         setLocalLoading(false);
       } catch (err) {
-        console.error("💥 Error in auth state handler:", err);
         if (isMounted) {
           setError("Authentication verification failed");
           setAuthStatus("error");
@@ -498,7 +443,7 @@ export default function ProtectedRoute({
   timeout = 15000,
   showErrorDetails = true,
   allowUnauthenticated = false,
-  usePagePermissions = true, // به طور پیش‌فرض فعال است
+  usePagePermissions = true,
 }: ProtectedRouteProps) {
   const { isLoading, error, authStatus, timeoutReached } = useAuthProtection(
     requiredRoles,

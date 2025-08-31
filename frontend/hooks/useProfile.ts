@@ -1,4 +1,3 @@
-// hooks/useProfile.ts
 "use client";
 import { useState, useCallback } from "react";
 import { useUser } from "@/context/UserContext";
@@ -12,7 +11,6 @@ interface ProfileUpdateRequest {
   phone?: string;
 }
 
-// Interface برای changePassword - دقیقاً همان که در PasswordChangeForm استفاده می‌شود
 interface PasswordChangeRequest {
   currentPassword: string;
   newPassword: string;
@@ -133,11 +131,10 @@ export const useProfile = () => {
             },
           }
         );
-        console.log(response);
 
         const result = response.data.data.user;
         showSuccessToast("Profile image updated successfully");
-        
+
         updateUser({
           ...user,
           profilePicture: result.profilePicture,
@@ -145,8 +142,6 @@ export const useProfile = () => {
 
         return true;
       } catch (error) {
-        console.log(error);
-
         const axiosError = error as AxiosError<{ message?: string }>;
         const errorMessage =
           axiosError.response?.data?.message || "Failed to upload image";

@@ -1,4 +1,3 @@
-// components/profile/ProfileImageUpload.tsx
 import React, { useRef } from "react";
 import {
   Box,

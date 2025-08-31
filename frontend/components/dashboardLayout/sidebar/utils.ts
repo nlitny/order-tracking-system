@@ -1,4 +1,3 @@
-// components/layout/sidebar/utils.ts
 import { alpha } from "@mui/material";
 import { brandColors } from "./constants";
 

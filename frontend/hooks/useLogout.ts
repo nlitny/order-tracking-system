@@ -1,4 +1,3 @@
-// hooks/useLogout.ts
 import { useCallback, useState } from "react";
 import { signOut } from "next-auth/react";
 import { useUser } from "@/context/UserContext";
@@ -18,13 +17,7 @@ export const useLogout = () => {
       setLoading(true);
       try {
         await axiosInstance.post<LogoutResponse>("/auth/logout");
-        console.log("Backend logout successful");
-      } catch (error) {
-        console.warn(
-          "Backend logout failed, but continuing with NextAuth signout:",
-          error
-        );
-      }
+      } catch (error) {}
 
       clearUser();
 
@@ -33,8 +26,6 @@ export const useLogout = () => {
         redirect: true,
       });
     } catch (error) {
-      console.error("Logout error:", error);
-
       try {
         clearUser();
         await signOut({
@@ -42,7 +33,6 @@ export const useLogout = () => {
           redirect: true,
         });
       } catch (signOutError) {
-        console.error("SignOut error:", signOutError);
         window.location.href = "/auth";
       }
     } finally {

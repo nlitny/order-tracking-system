@@ -18,13 +18,12 @@ import {
   InputAdornment,
   Pagination,
   Paper,
-  Skeleton,
   Alert,
   Button,
   useMediaQuery,
   useTheme,
   Fade,
-  Avatar,
+  Stack,
 } from "@mui/material";
 import {
   Search,
@@ -32,27 +31,23 @@ import {
   Add,
   Refresh,
   Assignment,
-  Person,
-  CalendarToday,
   Clear,
+  TrendingUp,
 } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { orderService } from "@/services/orderService";
-import {
-  OrderItem,
-  OrdersResponse,
-  OrderFilters,
-  OrderStatus,
-} from "@/types/order";
+import { OrderItem, OrderFilters, OrderStatus } from "@/types/customer-order";
 import { useToast } from "@/lib/toast/toast";
-import { format } from "date-fns";
+import OrderCard from "@/components/orders/OrderCard";
+import OrderCardSkeleton from "@/components/orders/OrderCardSkeleton";
+import { useUser } from "@/context/UserContext";
 
 const ORDER_STATUS_COLORS = {
   PENDING: { color: "#ff9800", bg: "#fff3e0", label: "Pending" },
   IN_PROGRESS: { color: "#2196f3", bg: "#e3f2fd", label: "In Progress" },
   COMPLETED: { color: "#4caf50", bg: "#e8f5e9", label: "Completed" },
   CANCELLED: { color: "#f44336", bg: "#ffebee", label: "Cancelled" },
-  ON_HOLD: { color: "#9c27b0", bg: "#f3e5f5", label: "On Hold" },
+  ON_HOLD: { color: "#ff5722", bg: "#fff3e0", label: "On Hold" },
 };
 
 // Priority order for sorting
@@ -72,7 +67,7 @@ export default function OrdersPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const { showSuccessToast, showErrorToast } = useToast();
-
+  const { user } = useUser();
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -96,16 +91,15 @@ export default function OrdersPage() {
   const [searchInput, setSearchInput] = useState("");
 
   // Sort orders by status priority
-  const sortOrdersByStatus = useCallback((orders: OrderItem[]) => {
+  const sortOrdersByStatus = useCallback((orders: any[]) => {
     return [...orders].sort((a, b) => {
-      const priorityA = STATUS_PRIORITY[a.status] || 999;
-      const priorityB = STATUS_PRIORITY[b.status] || 999;
+      const priorityA = (STATUS_PRIORITY as any)[a.status] || 999;
+      const priorityB = (STATUS_PRIORITY as any)[b.status] || 999;
 
       if (priorityA !== priorityB) {
         return priorityA - priorityB;
       }
 
-      // If same priority, sort by creation date (newest first)
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
   }, []);
@@ -115,12 +109,18 @@ export default function OrdersPage() {
       setLoading(true);
       setError(null);
       const response = await orderService.getOrders(filters);
-
-      // Sort the orders by status priority
       const sortedOrders = sortOrdersByStatus(response.data.orders);
 
       setOrders(sortedOrders);
-      setPagination(response.data.pagination);
+      setPagination(
+        (response.data as any).pagination || {
+          totalCount: (response.data as any).totalCount,
+          currentPage: (response.data as any).currentPage,
+          totalPages: (response.data as any).totalPages,
+          hasNextPage: (response.data as any).hasNextPage,
+          hasPrevPage: (response.data as any).hasPrevPage,
+        }
+      );
     } catch (err: any) {
       setError(err.message);
       showErrorToast("Failed to fetch orders");
@@ -192,155 +192,42 @@ export default function OrdersPage() {
     return count;
   }, [filters]);
 
-  const renderOrderCard = (order: OrderItem) => {
-    const statusConfig = ORDER_STATUS_COLORS[order.status];
-
-    return (
-      <Card
-        key={order.id}
-        elevation={0}
-        sx={{
-          borderRadius: 1,
-          border: "1px solid",
-          borderColor: "grey.200",
-          cursor: "pointer",
-          transition: "all 0.2s ease",
-          "&:hover": {
-            borderColor: "primary.main",
-            boxShadow: theme.shadows[4],
-            transform: "translateY(-2px)",
-          },
-        }}
-        onClick={() => handleOrderClick(order.id)}
-      >
-        <CardContent sx={{ p: { xs: 2, md: 3 } }}>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
-              mb: 2,
-            }}
-          >
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography
-                variant="h6"
-                sx={{
-                  fontWeight: 600,
-                  mb: 0.5,
-                  fontSize: { xs: "1rem", md: "1.25rem" },
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  display: "-webkit-box",
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: "vertical",
-                }}
-              >
-                {order.title}
-              </Typography>
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{
-                  fontWeight: 500,
-                  fontSize: { xs: "0.75rem", md: "0.875rem" },
-                }}
-              >
-                {order.orderNumber}
-              </Typography>
-            </Box>
-            <Chip
-              label={statusConfig.label}
-              size="small"
-              sx={{
-                backgroundColor: statusConfig.bg,
-                color: statusConfig.color,
-                fontWeight: 600,
-                fontSize: { xs: "0.75rem", md: "0.75rem" },
-                height: { xs: 24, md: 28 },
-                ml: 1,
-              }}
-            />
-          </Box>
-
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-            <Avatar
-              sx={{ width: 20, height: 20, fontSize: "0.75rem" }}
-              src={order.customer?.profilePicture || ""}
-            >
-              {order.customer.firstName.charAt(0)}
-            </Avatar>
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ fontSize: { xs: "0.75rem", md: "0.875rem" } }}
-            >
-              {order.customer.firstName} {order.customer.lastName}
-            </Typography>
-          </Box>
-
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-            <CalendarToday
-              sx={{ fontSize: { xs: 14, md: 16 }, color: "text.secondary" }}
-            />
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{ fontSize: { xs: "0.7rem", md: "0.75rem" } }}
-            >
-              Created {format(new Date(order.createdAt), "MMM dd, yyyy")}
-            </Typography>
-          </Box>
-        </CardContent>
-      </Card>
-    );
-  };
-
-  const renderSkeletonCard = () => (
-    <Card
-      elevation={0}
-      sx={{ borderRadius: 1, border: "1px solid", borderColor: "grey.200" }}
-    >
-      <CardContent sx={{ p: { xs: 2, md: 3 } }}>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            mb: 2,
-          }}
-        >
-          <Box sx={{ flex: 1 }}>
-            <Skeleton variant="text" width="80%" height={32} />
-            <Skeleton variant="text" width="40%" height={20} />
-          </Box>
-          <Skeleton
-            variant="rectangular"
-            width={80}
-            height={28}
-            sx={{ borderRadius: 1 }}
-          />
-        </Box>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-          <Skeleton variant="circular" width={20} height={20} />
-          <Skeleton variant="text" width="30%" height={20} />
-        </Box>
-        <Skeleton variant="text" width="50%" height={16} />
-      </CardContent>
-    </Card>
-  );
+  // Status statistics
+  const statusStats = useMemo(() => {
+    return {
+      total: orders.length,
+      pending: orders.filter((o) => o.status === "PENDING").length,
+      inProgress: orders.filter((o) => o.status === "IN_PROGRESS").length,
+      completed: orders.filter((o) => o.status === "COMPLETED").length,
+      onHold: orders.filter((o) => o.status === "ON_HOLD").length,
+      cancelled: orders.filter((o) => o.status === "CANCELLED").length,
+    };
+  }, [orders]);
 
   return (
     <Container maxWidth="xl" sx={{ py: { xs: 2, md: 4 } }}>
-      {/* Header */}
+      {/* Enhanced Header */}
       <Paper
         elevation={0}
         sx={{
-          p: { xs: 2, md: 3 },
+          p: { xs: 3, md: 4 },
           mb: 4,
           background: "linear-gradient(135deg, #1a2f42 0%, #497D74 100%)",
           color: "white",
           borderRadius: 1,
+          position: "relative",
+          overflow: "hidden",
+          "&::before": {
+            content: '""',
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background:
+              "radial-gradient(circle at 30% 20%, rgba(255,255,255,0.1) 0%, transparent 50%)",
+            pointerEvents: "none",
+          },
         }}
       >
         <Box
@@ -349,58 +236,128 @@ export default function OrdersPage() {
             justifyContent: "space-between",
             alignItems: "flex-start",
             flexWrap: "wrap",
-            gap: 2,
+            gap: 3,
+            position: "relative",
+            zIndex: 1,
           }}
         >
           <Box>
             <Typography
-              variant="h4"
+              variant="h3"
               sx={{
-                fontWeight: 700,
-                mb: 1,
+                fontWeight: 800,
+                mb: 2,
                 fontSize: {
-                  xs: "1.5rem",
-                  sm: "2rem",
-                  md: "2.125rem",
-                  color: "#EFE9D5",
+                  xs: "1.75rem",
+                  sm: "2.25rem",
+                  md: "2.5rem",
                 },
+                color: "#EFE9D5",
+                letterSpacing: "-0.02em",
               }}
             >
-              My Orders
+              {user?.role === "CUSTOMER" ? "My Orders" : "Orders List"}
             </Typography>
             <Typography
               variant="body1"
               sx={{
                 opacity: 0.9,
-                fontSize: { xs: "0.875rem", md: "1rem", color: "#EFE9D5" },
+                fontSize: { xs: "0.95rem", md: "1.1rem" },
+                color: "#EFE9D5",
+                mb: 3,
+                fontWeight: 400,
               }}
             >
               Manage and track all your orders in one place
             </Typography>
+
+            {/* Quick Stats */}
+            <Stack direction="row" spacing={4}>
+              <Box sx={{ textAlign: "center" }}>
+                <Typography
+                  variant="h4"
+                  sx={{ fontWeight: 700, color: "#EFE9D5" }}
+                >
+                  {statusStats.total}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{ color: "#EFE9D5", opacity: 0.8 }}
+                >
+                  Total Orders
+                </Typography>
+              </Box>
+              <Box sx={{ textAlign: "center" }}>
+                <Typography
+                  variant="h4"
+                  sx={{ fontWeight: 700, color: "#4FC3F7" }}
+                >
+                  {statusStats.inProgress}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{ color: "#EFE9D5", opacity: 0.8 }}
+                >
+                  In Progress
+                </Typography>
+              </Box>
+              <Box sx={{ textAlign: "center" }}>
+                <Typography
+                  variant="h4"
+                  sx={{ fontWeight: 700, color: "#81C784" }}
+                >
+                  {statusStats.completed}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{ color: "#EFE9D5", opacity: 0.8 }}
+                >
+                  Completed
+                </Typography>
+              </Box>
+            </Stack>
           </Box>
-          <Button
-            startIcon={<Add />}
-            onClick={() => router.push("/dashboard/orders/new")}
-            sx={{
-              bgcolor: theme.palette.secondary.contrastText,
-              color: theme.palette.tertiary.main,
-              border: "1px solid rgba(255,255,255,0.3)",
-              "&:hover": {
-                bgcolor: theme.palette.primary.contrastText,
-              },
-              minWidth: { xs: "100%", sm: "auto" },
-            }}
-          >
-            New Order
-          </Button>
+
+          {user?.role === "CUSTOMER" ? (
+            <Button
+              startIcon={<Add />}
+              onClick={() => router.push("/dashboard/orders/new")}
+              sx={{
+                bgcolor: theme.palette.secondary.contrastText,
+                color: theme.palette.tertiary.main,
+                border: "2px solid rgba(255,255,255,0.3)",
+                borderRadius: 1,
+                px: 3,
+                py: 1.5,
+                fontWeight: 700,
+                fontSize: "1rem",
+                "&:hover": {
+                  bgcolor: theme.palette.primary.contrastText,
+                  transform: "translateY(-2px)",
+                  boxShadow: "0 8px 20px rgba(0,0,0,0.2)",
+                },
+                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                minWidth: { xs: "100%", sm: "auto" },
+              }}
+            >
+              New Order
+            </Button>
+          ) : null}
         </Box>
       </Paper>
 
-      {/* Filters */}
-      <Card elevation={0} sx={{ mb: 3, borderRadius: 1 }}>
+      {/* Filters Section */}
+      <Card
+        elevation={0}
+        sx={{
+          mb: 3,
+          borderRadius: 1,
+          border: "1px solid",
+          borderColor: "grey.200",
+        }}
+      >
         <CardContent sx={{ p: { xs: 2, md: 3 } }}>
           <Grid container spacing={2} alignItems="center">
-            {/* Search */}
             <Grid size={{ xs: 12, md: 5 }}>
               <TextField
                 placeholder="Search orders by title, order number..."
@@ -431,7 +388,6 @@ export default function OrdersPage() {
               />
             </Grid>
 
-            {/* Status Filter */}
             <Grid size={{ xs: 12, md: 2.5 }}>
               <FormControl fullWidth size="medium">
                 <InputLabel>Status Filter</InputLabel>
@@ -441,9 +397,7 @@ export default function OrdersPage() {
                   onChange={(e) =>
                     handleStatusChange(e.target.value as OrderStatus)
                   }
-                  sx={{
-                    borderRadius: 1,
-                  }}
+                  sx={{ borderRadius: 1 }}
                 >
                   <MenuItem value="">All Orders</MenuItem>
                   <MenuItem value="PENDING">Pending</MenuItem>
@@ -455,7 +409,6 @@ export default function OrdersPage() {
               </FormControl>
             </Grid>
 
-            {/* Items per page */}
             <Grid size={{ xs: 12, md: 2 }}>
               <FormControl fullWidth size="medium">
                 <InputLabel>Items per page</InputLabel>
@@ -465,9 +418,7 @@ export default function OrdersPage() {
                   onChange={(e) =>
                     handleItemsPerPageChange(Number(e.target.value))
                   }
-                  sx={{
-                    borderRadius: 1,
-                  }}
+                  sx={{ borderRadius: 1 }}
                 >
                   {ITEMS_PER_PAGE_OPTIONS.map((option) => (
                     <MenuItem key={option} value={option}>
@@ -478,14 +429,20 @@ export default function OrdersPage() {
               </FormControl>
             </Grid>
 
-            {/* Actions */}
             <Grid size={{ xs: 12, md: 2.5 }}>
-              <Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end" , alignItems: "center" }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  gap: 1,
+                  justifyContent: "flex-end",
+                  alignItems: "center",
+                }}
+              >
                 <Button
-                  variant="outlined"
+                  variant="contained"
                   onClick={handleSearch}
                   startIcon={<Search />}
-                  sx={{ borderRadius: 1 }}
+                  sx={{ borderRadius: 1, px: 3 }}
                 >
                   Search
                 </Button>
@@ -493,11 +450,14 @@ export default function OrdersPage() {
                   onClick={handleRefresh}
                   color="primary"
                   sx={{
-                    border: "1px solid",
+                    border: "2px solid",
                     borderColor: "primary.main",
-                    width: 40,
-                    height: 40,
-                    borderRadius: "50%",
+                    borderRadius: 1,
+                    "&:hover": {
+                      transform: "rotate(180deg)",
+                      bgcolor: "primary.50",
+                    },
+                    transition: "all 0.3s ease",
                   }}
                 >
                   <Refresh />
@@ -510,7 +470,7 @@ export default function OrdersPage() {
           {totalActiveFilters > 0 && (
             <Box
               sx={{
-                mt: 2,
+                mt: 3,
                 pt: 2,
                 borderTop: "1px solid",
                 borderColor: "grey.200",
@@ -524,8 +484,12 @@ export default function OrdersPage() {
                   flexWrap: "wrap",
                 }}
               >
-                <FilterList color="action" sx={{ fontSize: 16 }} />
-                <Typography variant="caption" color="text.secondary">
+                <FilterList color="action" sx={{ fontSize: 18 }} />
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  fontWeight={600}
+                >
                   Active Filters:
                 </Typography>
                 {filters.status && (
@@ -533,17 +497,22 @@ export default function OrdersPage() {
                     label={`Status: ${
                       ORDER_STATUS_COLORS[filters.status].label
                     }`}
-                    size="small"
+                    size="medium"
                     onDelete={() => handleStatusChange("")}
-                    sx={{ fontSize: "0.75rem" }}
+                    sx={{
+                      fontSize: "0.8rem",
+                      fontWeight: 600,
+                      bgcolor: ORDER_STATUS_COLORS[filters.status].bg,
+                      color: ORDER_STATUS_COLORS[filters.status].color,
+                    }}
                   />
                 )}
                 {filters.search && (
                   <Chip
                     label={`Search: "${filters.search}"`}
-                    size="small"
+                    size="medium"
                     onDelete={handleClearSearch}
-                    sx={{ fontSize: "0.75rem" }}
+                    sx={{ fontSize: "0.8rem", fontWeight: 600 }}
                   />
                 )}
               </Box>
@@ -563,7 +532,7 @@ export default function OrdersPage() {
         <Grid container spacing={3}>
           {Array.from({ length: 6 }).map((_, index) => (
             <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={index}>
-              {renderSkeletonCard()}
+              <OrderCardSkeleton />
             </Grid>
           ))}
         </Grid>
@@ -571,23 +540,32 @@ export default function OrdersPage() {
         <Paper
           elevation={0}
           sx={{
-            p: 6,
+            p: 8,
             textAlign: "center",
             borderRadius: 1,
             border: "2px dashed",
             borderColor: "grey.300",
+            bgcolor: "grey.50",
           }}
         >
-          <Assignment sx={{ fontSize: 64, color: "grey.400", mb: 2 }} />
-          <Typography variant="h5" color="text.secondary" sx={{ mb: 1 }}>
+          <Assignment sx={{ fontSize: 80, color: "grey.400", mb: 3 }} />
+          <Typography
+            variant="h4"
+            color="text.secondary"
+            sx={{ mb: 2, fontWeight: 600 }}
+          >
             {totalActiveFilters > 0
               ? "No orders match your filters"
               : "No orders found"}
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          <Typography
+            variant="body1"
+            color="text.secondary"
+            sx={{ mb: 4, maxWidth: 400, mx: "auto" }}
+          >
             {totalActiveFilters > 0
-              ? "Try adjusting your search criteria or filters"
-              : "Create your first order to get started"}
+              ? "Try adjusting your search criteria or filters to find what you're looking for"
+              : "Create your first order to get started with managing your business"}
           </Typography>
           {totalActiveFilters === 0 && (
             <Button
@@ -595,41 +573,48 @@ export default function OrdersPage() {
               startIcon={<Add />}
               onClick={() => router.push("/orders/new")}
               size="large"
-              sx={{ borderRadius: 1 }}
+              sx={{ borderRadius: 1, px: 4, py: 1.5, fontSize: "1.1rem" }}
             >
               Create First Order
             </Button>
           )}
         </Paper>
       ) : (
-        <Fade in timeout={300}>
+        <Fade in timeout={500}>
           <Box>
             {/* Status Priority Info */}
             <Paper
               elevation={0}
               sx={{
-                p: 2,
-                mb: 3,
+                p: 3,
+                mb: 4,
                 borderRadius: 1,
                 bgcolor: "info.50",
-                border: "1px solid",
+                border: "2px solid",
                 borderColor: "info.200",
               }}
             >
-              <Typography
-                variant="body2"
-                color="info.main"
-                sx={{ fontWeight: 500 }}
-              >
-                📋 Orders are automatically sorted by priority: In Progress → On
-                Hold → Pending → Completed → Cancelled
-              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <TrendingUp sx={{ color: "info.main", fontSize: 24 }} />
+                <Typography
+                  variant="body1"
+                  color="info.main"
+                  sx={{ fontWeight: 600 }}
+                >
+                  📋 Orders are automatically sorted by priority: In Progress →
+                  On Hold → Pending → Completed → Cancelled
+                </Typography>
+              </Box>
             </Paper>
 
             <Grid container spacing={3}>
-              {orders.map((order) => (
+              {orders.map((order, index) => (
                 <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={order.id}>
-                  {renderOrderCard(order)}
+                  <OrderCard
+                    order={order}
+                    onClick={handleOrderClick}
+                    index={index}
+                  />
                 </Grid>
               ))}
             </Grid>
@@ -639,14 +624,17 @@ export default function OrdersPage() {
 
       {/* Pagination */}
       {pagination.totalPages > 1 && (
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-          <Paper elevation={0} sx={{ p: 2, borderRadius: 1 }}>
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 5 }}>
+          <Paper
+            elevation={0}
+            sx={{ p: 3, borderRadius: 1, bgcolor: "grey.50" }}
+          >
             <Pagination
               count={pagination.totalPages}
               page={pagination.currentPage}
               onChange={handlePageChange}
               color="primary"
-              size={isMobile ? "small" : "medium"}
+              size={isMobile ? "medium" : "large"}
               showFirstButton
               showLastButton
             />
@@ -654,19 +642,19 @@ export default function OrdersPage() {
         </Box>
       )}
 
-      {/* Orders Summary */}
+      {/* Summary */}
       {orders.length > 0 && (
         <Paper
           elevation={0}
           sx={{
-            p: 2,
-            mt: 3,
+            p: 3,
+            mt: 4,
             borderRadius: 1,
             bgcolor: "grey.50",
             textAlign: "center",
           }}
         >
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body1" color="text.secondary" fontWeight={500}>
             Showing {(pagination.currentPage - 1) * pagination.limit + 1} to{" "}
             {Math.min(
               pagination.currentPage * pagination.limit,

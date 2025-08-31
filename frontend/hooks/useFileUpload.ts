@@ -9,8 +9,8 @@ const ALLOWED_FILE_TYPES = [
   "application/pdf",
 ];
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-const MAX_TOTAL_SIZE = 10 * 1024 * 1024; // 10MB total
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const MAX_TOTAL_SIZE = 10 * 1024 * 1024;
 const MAX_FILES = 10;
 
 export const useFileUpload = () => {
@@ -22,41 +22,36 @@ export const useFileUpload = () => {
       const validFiles: AttachedFile[] = [];
       const newErrors: string[] = [];
 
-      // Check total number of files
       if (files.length + fileList.length > MAX_FILES) {
-        newErrors.push(`حداکثر ${MAX_FILES} فایل مجاز است`);
+        newErrors.push(`Maximum ${MAX_FILES} files allowed`);
         return { validFiles: [], errors: newErrors };
       }
 
       let totalSize = files.reduce((sum, file) => sum + file.size, 0);
 
       Array.from(fileList).forEach((file) => {
-        // Check file type
         if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-          newErrors.push(`${file.name}: نوع فایل پشتیبانی نمی‌شود`);
+          newErrors.push(`${file.name}: File type not supported`);
           return;
         }
 
-        // Check file size
         if (file.size > MAX_FILE_SIZE) {
-          newErrors.push(`${file.name}: حجم فایل نباید بیش از 10MB باشد`);
+          newErrors.push(`${file.name}: File size must not exceed 10MB`);
           return;
         }
 
-        // Check total size
         if (totalSize + file.size > MAX_TOTAL_SIZE) {
-          newErrors.push(`مجموع حجم فایل‌ها نباید بیش از 10MB باشد`);
+          newErrors.push(`Total file size must not exceed 10MB`);
           return;
         }
 
-        // Check for duplicates
         const isDuplicate = files.some(
           (existing) =>
             existing.name === file.name && existing.size === file.size
         );
 
         if (isDuplicate) {
-          newErrors.push(`${file.name}: فایل تکراری است`);
+          newErrors.push(`${file.name}: Duplicate file`);
           return;
         }
 

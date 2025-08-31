@@ -6,11 +6,13 @@ export interface OrderFormData {
 }
 
 export interface AttachedFile {
+  file: File;
+  preview?: string;
   id: string;
   name: string;
   size: number;
   type: string;
-  file: File;
+  url?: string;
 }
 
 export interface FormErrors {
@@ -23,57 +25,48 @@ export interface FormErrors {
 
 export interface OrderItem {
   id: string;
-  orderNumber: string;
   title: string;
-  status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | "ON_HOLD";
+  description: string;
+  status: OrderStatus;
+  estimatedCompletion?: string;
   createdAt: string;
-  customer: {
-    firstName: string;
-    lastName: string;
-    profilePicture?: string;
-  };
+  updatedAt: string;
+  customerName: string;
+  customerEmail: string;
 }
 
 export interface OrdersResponse {
-  success: boolean;
-  message: string;
+  status: string;
   data: {
     orders: OrderItem[];
-    pagination: {
-      currentPage: number;
-      totalPages: number;
-      totalItems: number;
-      hasNext: boolean;
-      hasPrev: boolean;
-      limit: number;
-    };
+    totalCount: number;
+    currentPage: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
   };
 }
 
 export interface OrderDetails {
   id: string;
-  orderNumber: string;
-  customerId: string;
   title: string;
   description: string;
-  status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | "ON_HOLD";
+  status: OrderStatus;
+  orderNumber: string;
   estimatedCompletion?: string;
-  special_instructions?: string;
   completedAt?: string;
+  special_instructions?: string;
   createdAt: string;
   updatedAt: string;
   customer: {
     id: string;
-    firstName: string;
-    lastName: string;
+    name: string;
     email: string;
-    profilePicture?: string;
   };
 }
 
 export interface OrderDetailsResponse {
-  success: boolean;
-  message: string;
+  status: string;
   data: OrderDetails;
 }
 
@@ -83,9 +76,12 @@ export interface MediaFile {
   originalName: string;
   mimeType: string;
   size: number;
-  fileType: "IMAGE" | "VIDEO" | "DOCUMENT";
+  fileType: "IMAGE" | "VIDEO" | "DOCUMENT" | "AUDIO";
   path: string;
+  isPublic: boolean;
+  description?: string | null;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface MediaResponse {
@@ -96,28 +92,42 @@ export interface MediaResponse {
   };
 }
 
-export interface OrderResponse {
+export interface AdminMediaFile {
+  id: string;
+  fileName: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  fileType: "IMAGE" | "VIDEO" | "DOCUMENT" | "AUDIO";
+  path: string;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminMediaResponse {
   success: boolean;
   message: string;
   data: {
-    id: string;
-    orderNumber: string;
-    customerId: string;
-    title: string;
-    description: string;
-    status: string;
-    estimatedCompletion?: string;
-    special_instructions?: string;
-    completedAt?: string;
-    createdAt: string;
-    updatedAt: string;
-    customer: {
-      id: string;
-      firstName: string;
-      lastName: string;
-      email: string;
-      profilePicture?: string;
-    };
+    mediaFiles: AdminMediaFile[];
+    count: number;
+  };
+}
+
+export interface AdminMediaUploadResponse {
+  success: boolean;
+  message: string;
+  data: {
+    uploadedFiles: number;
+    mediaFiles: AdminMediaFile[];
+  };
+}
+
+export interface OrderResponse {
+  status: string;
+  message: string;
+  data: {
+    orderId: string;
   };
 }
 
@@ -126,16 +136,6 @@ export interface MediaUploadResponse {
   message: string;
   data: {
     uploadedFiles: number;
-    mediaFiles: Array<{
-      id: string;
-      fileName: string;
-      originalName: string;
-      mimeType?: string;
-      size: number;
-      fileType: string;
-      path?: string;
-      createdAt: string;
-    }>;
   };
 }
 
@@ -146,17 +146,28 @@ export interface UpdateOrderData {
   special_instructions?: string;
 }
 
+export interface UpdateOrderStatusData {
+  status: OrderStatus;
+}
+
+export interface UpdateMediaDescriptionData {
+  description: string;
+}
+
 export type OrderStatus =
   | "PENDING"
+  | "ON_HOLD"
   | "IN_PROGRESS"
   | "COMPLETED"
-  | "CANCELLED"
-  | "ON_HOLD"
-  | "";
+  | "CANCELLED";
 
 export interface OrderFilters {
   page: number;
   limit: number;
-  status: OrderStatus;
+  status?: string;
   search: string;
+}
+
+export interface UserRole {
+  role: "CUSTOMER" | "ADMIN" | "STAFF";
 }

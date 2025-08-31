@@ -1,4 +1,3 @@
-// components/layout/ProfileMenu.tsx
 import React from "react";
 import {
   Menu,
@@ -50,7 +49,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
   };
 
   const handleLogout = async () => {
-    onClose(); // بستن منو قبل از logout
+    onClose();
     await logout();
   };
 
@@ -67,7 +66,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
     <Menu
       anchorEl={anchorEl}
       open={open}
-      onClose={logoutLoading ? undefined : onClose} // غیرفعال کردن close هنگام logout
+      onClose={logoutLoading ? undefined : onClose}
       onClick={logoutLoading ? undefined : onClose}
       disableAutoFocusItem
       PaperProps={{
@@ -82,8 +81,8 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
           border: `1px solid ${alpha(theme.palette.divider, 0.12)}`,
           backdropFilter: "blur(20px)",
           boxShadow: theme.shadows[8],
-          opacity: logoutLoading ? 0.7 : 1, // کم کردن opacity هنگام logout
-          pointerEvents: logoutLoading ? "none" : "auto", // غیرفعال کردن تعامل
+          opacity: logoutLoading ? 0.7 : 1,
+          pointerEvents: logoutLoading ? "none" : "auto",
           "&:before": {
             content: '""',
             display: "block",
@@ -112,7 +111,6 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
         },
       }}
     >
-      {/* Profile Header - کد قبلی همانند قبل */}
       <Box
         sx={{
           position: "relative",
@@ -126,10 +124,9 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 2.5 }}>
-          {/* Avatar with Online Status */}
           <Box sx={{ position: "relative" }}>
             <Avatar
-              src={user?.profileImage}
+              src={user?.profilePicture}
               sx={{
                 width: { xs: 48, sm: 52, md: 56 },
                 height: { xs: 48, sm: 52, md: 56 },
@@ -143,13 +140,12 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
                 fontWeight: 700,
               }}
             >
-              {!user?.profileImage &&
+              {!user?.profilePicture &&
                 getInitials(
                   (user?.firstName || "") + " " + (user?.lastName || "")
                 )}
             </Avatar>
 
-            {/* Online Status Indicator */}
             <Box
               sx={{
                 position: "absolute",
@@ -157,7 +153,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
                 right: { xs: 2, sm: 4 },
                 width: { xs: 12, sm: 14, md: 16 },
                 height: { xs: 12, sm: 14, md: 16 },
-                bgcolor: logoutLoading ? "#f44336" : "#4CAF50", // قرمز هنگام logout
+                bgcolor: logoutLoading ? "#f44336" : "#4CAF50",
                 borderRadius: "50%",
                 border: `3px solid ${theme.palette.background.paper}`,
                 boxShadow: `0 2px 6px ${alpha(
@@ -180,7 +176,6 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
             />
           </Box>
 
-          {/* User Information */}
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography
               variant="h6"
@@ -212,7 +207,6 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
               {user?.email}
             </Typography>
 
-            {/* Role Badge */}
             <Box
               sx={{
                 mt: 1,
@@ -244,9 +238,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
         </Box>
       </Box>
 
-      {/* Menu Items */}
       <Box sx={{ py: 1 }}>
-        {/* Profile Menu Item */}
         <MenuItem
           onClick={() => handleMenuItemClick(onProfileClick)}
           disabled={logoutLoading}
@@ -458,7 +450,6 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
         </MenuItem>
       </Box>
 
-      {/* Footer Section - کد قبلی همانند قبل */}
       <Box
         sx={{
           px: { xs: 2.5, sm: 3, md: 3.5 },
@@ -490,7 +481,6 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
             Last login: "unknown"
           </Typography>
 
-          {/* Version Info */}
           <Box
             sx={{
               display: "inline-flex",

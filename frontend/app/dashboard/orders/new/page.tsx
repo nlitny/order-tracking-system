@@ -1,4 +1,3 @@
-// app/orders/new/page.tsx
 "use client";
 import React, { useState, useEffect } from "react";
 import {
@@ -166,7 +165,7 @@ export default function CreateOrderPage() {
       };
 
       setUploadProgress(30);
-      const orderRes = await orderService.createOrder(orderPayload);
+      const orderRes = (await orderService.createOrder(orderPayload)) as any;
 
       if (!orderRes || !orderRes.data) {
         throw new Error("Failed to create order");
@@ -174,7 +173,6 @@ export default function CreateOrderPage() {
 
       setUploadProgress(60);
 
-      // اگر فایل وجود داشت، آپلود کن
       if (files.length > 0) {
         await orderService.uploadMedia(
           orderRes.data.id,
@@ -184,24 +182,20 @@ export default function CreateOrderPage() {
 
       setUploadProgress(90);
 
-      // refresh notifications
       await refreshNotifications();
 
       setUploadProgress(100);
 
-      // نمایش پیغام موفقیت
       if (files.length > 0) {
         showSuccessToast("Order created and files uploaded successfully");
       } else {
         showSuccessToast("Order created successfully");
       }
 
-      // نمایش پیغام اطلاعات
       showInfoToast("You Have Unread Notification", {
         position: "bottom-left",
       });
 
-      // منتظر بمان تا پیغام‌ها نمایش داده شوند، سپس فرم را ریست کن
       setTimeout(() => {
         resetForm();
         setIsSubmitting(false);
@@ -223,7 +217,7 @@ export default function CreateOrderPage() {
           Object.keys(errors).length === 0
         );
       case 1:
-        return true; // File upload is optional
+        return true;
       case 2:
         return true;
       default:

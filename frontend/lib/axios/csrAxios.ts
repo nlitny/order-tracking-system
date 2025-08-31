@@ -1,16 +1,14 @@
-// axios instance
 import axios, { AxiosError, AxiosRequestConfig } from "axios";
 import { getSession, signOut } from "next-auth/react";
 
-// حذف کنید: const API_URL = process.env.NEXT_PUBLIC_API_URL;
-// اکنون از relative path استفاده می‌کنیم
-
 const axiosInstance = axios.create({
-  baseURL: "/api/v1", // تغییر به relative path
-  timeout: 100000,
+  baseURL: "/api/v1",
+  timeout: 300000,
   headers: {
     "Content-Type": "application/json",
   },
+  maxContentLength: 50 * 1024 * 1024, // 50MB
+  maxBodyLength: 50 * 1024 * 1024, // 50MB
 });
 
 // باقی کد همانند قبل باقی می‌ماند

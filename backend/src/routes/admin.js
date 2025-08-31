@@ -30,6 +30,6 @@ router.get("/users", authenticateToken, authorizeRoles("ADMIN"), adminController
  * @route   GET /api/v1/admin/dashboard
  * @access  Private (Admin only)
  */
-router.get("/dashboard", authenticateToken,authorizeRoles("ADMIN"), adminController.getAdminDashboard);
+router.get("/dashboard", authenticateToken,authorizeRoles("ADMIN" , "STAFF"), adminController.getAdminDashboard);
 
 module.exports = router;

@@ -1,4 +1,3 @@
-// components/profile/ProfileForm.tsx
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import {
@@ -48,7 +47,6 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
     phone: "",
   });
 
-  // تصحیح useEffect - حذف formData از dependency array
   useEffect(() => {
     if (user) {
       const newFormData = {
@@ -58,11 +56,9 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
       };
 
       setFormData(newFormData);
-      console.log("📋 Form data synchronized with user:", newFormData);
     }
-  }, [user]); // فقط user در dependency
+  }, [user]);
 
-  // باقی کد همان باقی می‌ماند...
   const validateForm = useCallback((): boolean => {
     const newErrors = {
       firstName: "",
@@ -97,7 +93,6 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
     const hasErrors = Object.values(newErrors).some((error) => error !== "");
 
     if (hasErrors) {
-      console.warn("❌ Form validation failed:", newErrors);
     }
 
     return !hasErrors;
@@ -106,25 +101,12 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
   const handleEdit = useCallback(() => {
     setIsEditing(true);
     setErrors({ firstName: "", lastName: "", phone: "" });
-    console.log("✏️ Started editing profile");
   }, []);
 
   const handleSave = useCallback(async () => {
     if (!validateForm()) {
-      console.warn("❌ Cannot save: form validation failed");
       return;
     }
-
-    console.log("💾 Saving profile changes:", {
-      current: formData,
-      user: user
-        ? {
-            firstName: user.firstName,
-            lastName: user.lastName,
-            phone: user.phone,
-          }
-        : null,
-    });
 
     const updateData: ProfileUpdateRequest = {
       firstName: formData.firstName.trim(),
@@ -140,9 +122,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
     if (success) {
       setIsEditing(false);
       setErrors({ firstName: "", lastName: "", phone: "" });
-      console.log("✅ Profile saved successfully");
     } else {
-      console.error("❌ Failed to save profile");
     }
   }, [formData, validateForm, onUpdate, user]);
 
@@ -156,7 +136,6 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
     }
     setErrors({ firstName: "", lastName: "", phone: "" });
     setIsEditing(false);
-    console.log("❌ Cancelled profile editing");
   }, [user]);
 
   const handleFieldChange = useCallback(
@@ -243,7 +222,6 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
           )}
         </Stack>
         <Grid container spacing={3}>
-          {/* باقی فیلدها همان باقی می‌ماند */}
           <Grid size={{ xs: 12, sm: 6 }}>
             <FormControl fullWidth error={!!errors.firstName}>
               <TextField

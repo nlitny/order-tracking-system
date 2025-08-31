@@ -1,11 +1,9 @@
-// components/profile/ProfileSkeleton.tsx
 import React from "react";
 import { Box, Card, CardContent, Skeleton, Stack, Grid } from "@mui/material";
 
 export const ProfileSkeleton: React.FC = () => {
   return (
     <Box>
-      {/* Header with Avatar */}
       <Stack direction="row" spacing={3} alignItems="center" mb={4}>
         <Skeleton variant="circular" width={120} height={120} />
         <Box>

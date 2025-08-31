@@ -1,4 +1,3 @@
-// components/profile/PasswordChangeForm.tsx
 import React, { useState } from "react";
 import {
   Card,

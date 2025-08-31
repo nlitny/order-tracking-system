@@ -1,4 +1,3 @@
-// components/layout/sidebar/MenuItems.tsx
 "use client";
 import React from "react";
 import {
@@ -22,6 +21,9 @@ import {
   ChevronRight as ChevronRightIcon,
   NotificationAdd,
   NotificationAddSharp,
+  Group,
+  GroupAdd,
+  Groups,
 } from "@mui/icons-material";
 import Link from "next/link";
 import { MenuItem } from "@/types/dashboardLayout";
@@ -47,6 +49,10 @@ import {
 import { usePageAccess } from "@/hooks/usePageAccess";
 import { UserRole } from "@/types/types";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useUsersManagement } from "@/hooks/useUsersManagement";
+import { useCustomerDashboard } from "@/hooks/useCustomerDashboard";
+import { useAdminDashboard } from "@/hooks/useAdminDashboard";
+import { useUser } from "@/context/UserContext";
 
 interface MenuItemsProps {
   collapsed: boolean;
@@ -61,13 +67,22 @@ interface MenuItemsProps {
   isParentActive: (children: MenuItem[]) => boolean;
 }
 
-// 🔥 Extended MenuItem with roles
 interface MenuItemWithRoles extends MenuItem {
-  roles?: UserRole[]; // اگر تعریف نشود، همه role ها دسترسی دارند
+  roles?: UserRole[];
   children?: MenuItemWithRoles[];
 }
 
-// 🔥 Skeleton Component
+const BadgeSkeleton = () => (
+  <Skeleton
+    variant="circular"
+    width={18}
+    height={18}
+    sx={{
+      bgcolor: alpha(brandColors.lightTeal, 0.3),
+    }}
+  />
+);
+
 const MenuItemSkeleton = ({
   collapsed,
   isMobile,
@@ -115,33 +130,87 @@ export default function MenuItems({
   const theme = useTheme();
   const { userRoles, isLoading, shouldWait } = usePageAccess();
   const { unreadCount, hasUnreadNotifications } = useNotifications();
-  // Check user roles
+  const { user, loading: userLoading } = useUser();
+
+  const isCustomer = user?.role === "CUSTOMER";
+  const isAdminOrStaff = user?.role === "ADMIN" || user?.role === "STAFF";
+
+  const customerHookResult = useCustomerDashboard({
+    enabled: isCustomer,
+  });
+
+  const adminHookResult = useAdminDashboard({
+    enabled: isAdminOrStaff,
+  });
+
+  const customerData = isCustomer ? customerHookResult.data : null;
+  const customerLoading = isCustomer ? customerHookResult.loading : false;
+
+  const adminData = isAdminOrStaff ? adminHookResult.data : null;
+  const adminLoading = isAdminOrStaff ? adminHookResult.loading : false;
+
+  const isBadgeDataLoading = React.useMemo(() => {
+    if (userLoading) return true;
+    if (isCustomer) return customerLoading;
+    if (isAdminOrStaff) return adminLoading;
+    return false;
+  }, [userLoading, isCustomer, customerLoading, isAdminOrStaff, adminLoading]);
+
   const hasRole = (roles: UserRole[]): boolean => {
     return roles.some((role) => userRoles.includes(role));
   };
 
-  // 🔥 Menu items with role-based access
+  const renderBadge = (
+    badgeValue: number | false | undefined,
+    isLoading: boolean = false
+  ) => {
+    if (isLoading) {
+      return <BadgeSkeleton />;
+    }
+
+    if (!badgeValue || badgeValue === 0) {
+      return null;
+    }
+
+    return (
+      <Badge
+        badgeContent={badgeValue > 99 ? "99+" : badgeValue}
+        sx={{
+          "& .MuiBadge-badge": {
+            backgroundColor: brandColors.lightTeal,
+            color: brandColors.navy,
+            fontSize: "0.7rem",
+            fontWeight: 600,
+            minWidth: 18,
+            height: 18,
+          },
+        }}
+      />
+    );
+  };
+
   const menuItems: MenuItemWithRoles[] = [
     {
       id: "dashboard",
       title: "Dashboard",
       icon: <DashboardIcon />,
       path: "/dashboard",
-      // همه role ها دسترسی دارند (roles تعریف نشده)
     },
     {
       id: "orders",
       title: "Orders",
       icon: <FactCheckIcon />,
-      roles: ["CUSTOMER"],
+      roles: ["CUSTOMER", "STAFF", "ADMIN"],
       children: [
         {
           id: "orderslist",
           title: "Orders List",
           icon: <ReceiptIcon />,
           path: "/dashboard/orders",
-          badge: 12,
-          roles: ["CUSTOMER"],
+          badge: isCustomer
+            ? customerData?.orders?.total
+            : adminData?.orders?.total,
+          roles: ["CUSTOMER", "STAFF", "ADMIN"],
         },
         {
           id: "neworder",
@@ -149,6 +218,29 @@ export default function MenuItems({
           icon: <PeopleIcon />,
           path: "/dashboard/orders/new",
           roles: ["CUSTOMER"],
+        },
+      ],
+    },
+    {
+      id: "users",
+      title: "Manage Users",
+      icon: <Group />,
+      roles: ["ADMIN"],
+      children: [
+        {
+          id: "userslist",
+          title: "Users",
+          icon: <Groups />,
+          path: "/dashboard/admin/users",
+          badge: adminData?.users?.total,
+          roles: ["ADMIN"],
+        },
+        {
+          id: "newadmin",
+          title: "Create New Staff/Admin",
+          icon: <GroupAdd />,
+          path: "/dashboard/admin/register",
+          roles: ["ADMIN"],
         },
       ],
     },
@@ -165,29 +257,23 @@ export default function MenuItems({
       title: "Profile",
       icon: <AccountBoxIcon />,
       path: "/dashboard/profile",
-      roles: ["ADMIN", "STAFF", "CUSTOMER"], // فقط ADMIN و STAFF
+      roles: ["ADMIN", "STAFF", "CUSTOMER"],
     },
   ];
 
-  // 🔥 Filter menu items based on user roles
   const filterMenuItems = (items: MenuItemWithRoles[]): MenuItemWithRoles[] => {
     return items.filter((item) => {
-      // اگر roles تعریف نشده باشد، همه دسترسی دارند
       if (!item.roles || item.roles.length === 0) {
         return true;
       }
 
-      // بررسی دسترسی کاربر
       const hasAccess = hasRole(item.roles);
 
-      // اگر آیتم children دارد، آن‌ها را نیز فیلتر کن
       if (hasAccess && item.children) {
         const filteredChildren = filterMenuItems(item.children);
-        // اگر هیچ child قابل دسترسی نباشد، parent را نشان نده
         if (filteredChildren.length === 0) {
           return false;
         }
-        // children فیلتر شده را به آیتم اختصاص بده
         item.children = filteredChildren;
       }
 
@@ -195,15 +281,13 @@ export default function MenuItems({
     });
   };
 
-  // 🔥 Get filtered menu items
   const visibleMenuItems = React.useMemo(() => {
     if (isLoading || shouldWait) {
       return [];
     }
     return filterMenuItems([...menuItems]);
-  }, [userRoles, isLoading, shouldWait]);
+  }, [userRoles, isLoading, shouldWait, customerData, adminData, unreadCount]);
 
-  // 🔥 Show skeleton while loading
   if (isLoading || shouldWait) {
     return (
       <List sx={{ px: collapsed && !isMobile ? 1 : 0 }}>
@@ -218,7 +302,6 @@ export default function MenuItems({
     );
   }
 
-  // 🔥 Show message if no items available
   if (visibleMenuItems.length === 0) {
     return (
       <Box sx={{ p: 2, textAlign: "center" }}>
@@ -314,7 +397,6 @@ export default function MenuItems({
                     </>
                   )}
 
-                  {/* نشانگر dropdown برای collapsed mode */}
                   {collapsed && !isMobile && (
                     <ChevronRightIcon
                       sx={{
@@ -408,23 +490,7 @@ export default function MenuItems({
                                     : brandColors.navy,
                               }}
                             />
-                            {child.badge && (
-                              <Badge
-                                badgeContent={
-                                  child.badge > 99 ? "99+" : child.badge
-                                }
-                                sx={{
-                                  "& .MuiBadge-badge": {
-                                    backgroundColor: brandColors.lightTeal,
-                                    color: brandColors.navy,
-                                    fontSize: "0.7rem",
-                                    fontWeight: 600,
-                                    minWidth: 18,
-                                    height: 18,
-                                  },
-                                }}
-                              />
-                            )}
+                            {renderBadge(child.badge, isBadgeDataLoading)}
                           </ListItemButton>
                         </Link>
                       </ListItem>
@@ -505,21 +571,8 @@ export default function MenuItems({
                               : brandColors.navy,
                         }}
                       />
-                      {item.badge && (
-                        <Badge
-                          badgeContent={item.badge > 99 ? "99+" : item.badge}
-                          sx={{
-                            "& .MuiBadge-badge": {
-                              backgroundColor: brandColors.lightTeal,
-                              color: brandColors.navy,
-                              fontSize: "0.7rem",
-                              fontWeight: 600,
-                              minWidth: 18,
-                              height: 18,
-                            },
-                          }}
-                        />
-                      )}
+
+                      {renderBadge(item.badge, isBadgeDataLoading)}
                     </>
                   )}
                 </ListItemButton>

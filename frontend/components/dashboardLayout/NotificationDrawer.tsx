@@ -1,4 +1,3 @@
-// components/layout/NotificationDrawer.tsx
 "use client";
 import React, { useState, useCallback, useMemo } from "react";
 import {
@@ -98,7 +97,6 @@ export default function NotificationDrawer({
     refreshNotifications,
   } = useNotifications();
 
-  // نمایش تعداد محدود اعلان‌ها
   const displayNotifications = useMemo(() => {
     return getRecentNotifications(8);
   }, [getRecentNotifications]);
@@ -107,7 +105,6 @@ export default function NotificationDrawer({
     return getCriticalNotifications();
   }, [getCriticalNotifications]);
 
-  // توابع event handler
   const handleMarkAsRead = useCallback(
     async (e: React.MouseEvent, notificationId: string) => {
       e.preventDefault();
@@ -122,7 +119,6 @@ export default function NotificationDrawer({
       e.preventDefault();
       e.stopPropagation();
 
-      // اگر خوانده نشده است، ابتدا آن را خوانده شده علامت‌گذاری کن
       if (!notification.isRead) {
         await markAsRead(notification.id);
       }
@@ -302,7 +298,6 @@ export default function NotificationDrawer({
           minWidth: 0,
         }}
       >
-        {/* هدر */}
         <Box
           sx={{
             position: "relative",
@@ -417,7 +412,6 @@ export default function NotificationDrawer({
             </Tooltip>
           </Box>
 
-          {/* دکمه Refresh */}
           <Box
             sx={{
               display: "flex",
@@ -442,7 +436,6 @@ export default function NotificationDrawer({
           </Box>
         </Box>
 
-        {/* لیست اعلان‌ها */}
         <Box
           sx={{
             flexGrow: 1,
@@ -498,7 +491,6 @@ export default function NotificationDrawer({
                       </ListItemAvatar>
 
                       <Box sx={{ flex: 1, minWidth: 0 }}>
-                        {/* عنوان و وضعیت */}
                         <Box
                           sx={{
                             display: "flex",
@@ -541,7 +533,6 @@ export default function NotificationDrawer({
                           />
                         </Box>
 
-                        {/* متن پیام */}
                         <Typography
                           component="div"
                           variant="body2"
@@ -555,8 +546,6 @@ export default function NotificationDrawer({
                         >
                           {notification.message}
                         </Typography>
-
-                        {/* جزئیات سفارش */}
                         <Box
                           sx={{
                             p: 1.5,
@@ -634,8 +623,6 @@ export default function NotificationDrawer({
                             </Typography>
                           </Box>
                         </Box>
-
-                        {/* زمان و دکمه‌های عملیات */}
                         <Box
                           sx={{
                             display: "flex",
@@ -675,8 +662,6 @@ export default function NotificationDrawer({
                               {formatNotificationTime(notification.sentAt)}
                             </Typography>
                           </Box>
-
-                          {/* دکمه‌های عملیات */}
                           <Box
                             sx={{ display: "flex", gap: 0.5, flexShrink: 0 }}
                           >
@@ -725,8 +710,6 @@ export default function NotificationDrawer({
                             </Tooltip>
                           </Box>
                         </Box>
-
-                        {/* نشانگر خوانده نشده */}
                         {!notification.isRead && (
                           <Box
                             sx={{
@@ -760,8 +743,6 @@ export default function NotificationDrawer({
             </List>
           )}
         </Box>
-
-        {/* فوتر */}
         <Box
           sx={{
             p: { xs: 2, sm: 2.5 },

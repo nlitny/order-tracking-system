@@ -1,4 +1,3 @@
-// app/dashboard/notifications/page.tsx
 "use client";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
@@ -117,7 +116,6 @@ export default function NotificationsPage() {
     fetchNotifications();
   }, [fetchNotifications]);
 
-  // Event Handlers
   const handlePageChange = useCallback(
     (_: React.ChangeEvent<unknown>, page: number) => {
       setFilters((prev) => ({ ...prev, page }));
@@ -150,7 +148,6 @@ export default function NotificationsPage() {
       e.stopPropagation();
 
       try {
-        // اگر خوانده نشده است، ابتدا آن را خوانده شده علامت‌گذاری کن
         if (!notification.isRead) {
           await markAsRead(notification.id);
           setNotifications((prev) =>
@@ -160,13 +157,11 @@ export default function NotificationsPage() {
           );
         }
 
-        // هدایت به صفحه سفارش
         if (notification.orderId) {
           router.push(`/dashboard/orders/${notification.orderId}`);
         }
       } catch (error) {
         showErrorToast("Failed to mark notification as read");
-        // بازهم به صفحه سفارش برو حتی اگر mark as read ناموفق بود
         if (notification.orderId) {
           router.push(`/dashboard/orders/${notification.orderId}`);
         }
@@ -256,7 +251,6 @@ export default function NotificationsPage() {
             </Avatar>
 
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              {/* عنوان و وضعیت */}
               <Box
                 sx={{
                   display: "flex",
@@ -310,8 +304,6 @@ export default function NotificationsPage() {
                   />
                 </Box>
               </Box>
-
-              {/* متن پیام */}
               <Typography
                 variant="body2"
                 color="text.secondary"
@@ -323,8 +315,6 @@ export default function NotificationsPage() {
               >
                 {notification.message}
               </Typography>
-
-              {/* جزئیات سفارش */}
               <Box
                 sx={{
                   p: 2,
@@ -387,8 +377,6 @@ export default function NotificationsPage() {
                   </Typography>
                 </Box>
               </Box>
-
-              {/* زمان و دکمه‌های عملیات */}
               <Box
                 sx={{
                   display: "flex",
@@ -408,8 +396,6 @@ export default function NotificationsPage() {
                     {formatNotificationTime(notification.sentAt)}
                   </Typography>
                 </Box>
-
-                {/* دکمه‌های عملیات */}
                 <Box sx={{ display: "flex", gap: 1 }}>
                   {!notification.isRead && (
                     <Tooltip title="Mark as read">
@@ -553,7 +539,6 @@ export default function NotificationsPage() {
 
   return (
     <Container maxWidth="xl" sx={{ py: { xs: 2, md: 4 } }}>
-      {/* Header */}
       <Paper
         elevation={0}
         sx={{
@@ -603,7 +588,6 @@ export default function NotificationsPage() {
             </Typography>
           </Box>
 
-          {/* Refresh Button */}
           <Button
             variant="outlined"
             onClick={handleRefresh}
@@ -622,8 +606,6 @@ export default function NotificationsPage() {
           </Button>
         </Box>
       </Paper>
-
-      {/* Notifications List */}
       <Box sx={{ mb: 4 }}>
         {loading ? (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -661,8 +643,6 @@ export default function NotificationsPage() {
           </Fade>
         )}
       </Box>
-
-      {/* Pagination */}
       {pagination.totalPages > 1 && (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
           <Pagination

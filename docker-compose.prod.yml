@@ -1,0 +1,75 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: order-tracking-db-prod
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - order-tracking-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: order-tracking-backend-prod
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://${ORDERTRACKING_USER}:${ORDERTRACKING_PASSWORD}@db:5432/${ORDERTRACKING_DB}?schema=public
+      - NODE_ENV=production
+      - CORS_ORIGIN=http://frontend:3000
+      - ALLOWED_ORIGINS=http://frontend:3000
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - order-tracking-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: ./frontend/Dockerfile.prod
+      args:
+        - NEXT_PUBLIC_API_BASEURL=http://backend:5000
+        - NEXT_PUBLIC_API_URL=http://backend:5000
+        - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+        - NEXTAUTH_URL=http://frontend:3000
+    container_name: order-tracking-frontend-prod
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_BASEURL=http://backend:5000
+      - NEXT_PUBLIC_API_URL=http://backend:5000
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - NEXTAUTH_URL=http://frontend:3000
+    depends_on:
+      - backend
+    networks:
+      - order-tracking-network
+
+networks:
+  order-tracking-network:
+    driver: bridge
+
+volumes:
+  postgres_data_prod:

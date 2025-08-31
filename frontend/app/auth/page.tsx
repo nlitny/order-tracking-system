@@ -96,13 +96,7 @@ const AuthPage: React.FC = () => {
             >
               <Grid container sx={{ minHeight: { xs: "auto", md: "700px" } }}>
                 <BrandPanel currentStep={step} />
-                <AuthForm
-                  formData={formData}
-                  updateFormData={updateFormData}
-                  currentStep={step}
-                  goToStep={goToStep}
-                  resetToEmail={resetToEmail}
-                />
+                <AuthForm />
               </Grid>
             </Paper>
           </Box>

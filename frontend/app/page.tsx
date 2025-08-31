@@ -145,10 +145,12 @@ export default function HomePage() {
                 </button>
               </Link>
 
-              <button className="px-8 py-4 border-2 border-[#EFE9D5]/30 text-[#EFE9D5] font-semibold rounded-xl hover:bg-[#EFE9D5]/10 transition-all duration-300 flex items-center gap-2">
-                <PlayCircleIcon className="w-5 h-5" />
-                Watch Demo
-              </button>
+              <Link href="/dashboard" className="group">
+                <button className="px-8 py-4 border-2 border-[#EFE9D5]/30 text-[#EFE9D5] font-semibold rounded-xl hover:bg-[#EFE9D5]/10 transition-all duration-300 flex items-center gap-2">
+                  <PlayCircleIcon className="w-5 h-5" />
+                  Watch Demo
+                </button>
+              </Link>
             </div>
           </div>
         </div>

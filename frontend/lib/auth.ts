@@ -1,4 +1,3 @@
-// lib/auth.ts
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import axios from "axios";
@@ -152,8 +151,6 @@ export const authOptions: NextAuthOptions = {
             ),
           } as UserWithAuth;
         } catch (error) {
-          console.error("Authentication error:", error);
-
           if (axios.isAxiosError(error)) {
             const errorMessage =
               error.response?.data?.message ||
@@ -213,7 +210,6 @@ export const authOptions: NextAuthOptions = {
         token.refreshTokenExpires &&
         currentTime >= Number(token.refreshTokenExpires)
       ) {
-        console.log("Refresh token expired, forcing logout");
         return { ...token, error: "RefreshTokenExpired" };
       }
 
@@ -225,11 +221,8 @@ export const authOptions: NextAuthOptions = {
       }
 
       try {
-        console.log("Refreshing access token...");
-
         const apiUrl =
           process.env.NEXT_PUBLIC_API_BASEURL || "http://localhost:5000";
-        console.log("Current refresh token:", token.refreshToken);
 
         const { data } = await axios.post<RefreshTokenResponse>(
           `${apiUrl}/api/v1/auth/refresh-token`,
@@ -260,8 +253,6 @@ export const authOptions: NextAuthOptions = {
           ),
         };
       } catch (error) {
-        console.error("Token refresh failed:", error);
-
         if (axios.isAxiosError(error)) {
           const status = error.response?.status;
           if (status === 401 || status === 403) {
@@ -303,7 +294,7 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: "jwt",
-    maxAge: 7 * 24 * 60 * 60,
+    maxAge: 29 * 24 * 60 * 60,
   },
   debug: process.env.NODE_ENV === "development",
 };

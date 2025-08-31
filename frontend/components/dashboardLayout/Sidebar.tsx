@@ -1,16 +1,11 @@
-// components/layout/Sidebar.tsx
 "use client";
 import React from "react";
 import { Drawer, Box, useTheme, alpha } from "@mui/material";
 import { usePathname } from "next/navigation";
-
-// Import components
 import LogoSection from "./sidebar/LogoSection";
 import DropdownMenu from "./sidebar/DropdownMenu";
 import MenuItems from "./sidebar/MenuItems";
 import SidebarFooter from "./sidebar/SidebarFooter";
-
-// Import types and constants
 import {
   SidebarComponentProps,
   DropdownState,
@@ -32,8 +27,6 @@ export default function SidebarComponent({
   const theme = useTheme();
   const pathname = usePathname();
   const [expandedItems, setExpandedItems] = React.useState<string[]>([]);
-
-  // State برای dropdown در حالت collapse
   const [dropdownOpen, setDropdownOpen] = React.useState<DropdownState>({
     open: false,
     anchorEl: null,
@@ -48,7 +41,6 @@ export default function SidebarComponent({
     );
   };
 
-  // Handle dropdown برای حالت collapse
   const handleDropdownClick = (
     event: React.MouseEvent<HTMLElement>,
     item: MenuItem

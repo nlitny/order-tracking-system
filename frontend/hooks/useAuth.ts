@@ -1,4 +1,3 @@
-// hooks/useAuth.ts
 import { useState, useCallback } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -8,17 +7,17 @@ interface AuthState {
   step: AuthStep;
   loading: boolean;
   errors: ValidationErrors;
-  isRedirecting: boolean; // 🔴 اضافه شد
+  isRedirecting: boolean;
 }
 
 export const useAuth = () => {
-  const router = useRouter(); // 🔴 اضافه شد
+  const router = useRouter();
 
   const [authState, setAuthState] = useState<AuthState>({
     step: "email",
     loading: false,
     errors: {},
-    isRedirecting: false, // 🔴 اضافه شد
+    isRedirecting: false,
   });
 
   const [formData, setFormData] = useState<AuthFormData>({
@@ -46,10 +45,10 @@ export const useAuth = () => {
       step: "email",
       loading: false,
       errors: {},
-      isRedirecting: false, // 🔴 اضافه شد
+      isRedirecting: false,
     });
     setFormData({
-      email: formData.email, // حفظ ایمیل
+      email: formData.email,
       password: "",
       first_name: "",
       last_name: "",
@@ -61,12 +60,10 @@ export const useAuth = () => {
     setAuthState((prev) => ({ ...prev, loading }));
   }, []);
 
-  // 🔴 تابع جدید برای مدیریت وضعیت redirect
   const setRedirecting = useCallback((isRedirecting: boolean) => {
     setAuthState((prev) => ({ ...prev, isRedirecting }));
   }, []);
 
-  // 🔴 اصلاح شده - مدیریت کامل loading و redirect
   const completeAuthWithNextAuth = useCallback(
     async (data: {
       email: string;
@@ -76,38 +73,27 @@ export const useAuth = () => {
       rePassword?: string;
     }): Promise<boolean> => {
       try {
-        console.log("🚀 Starting NextAuth authentication...");
-
         const result = await signIn("auth-completion", {
           email: data.email,
           password: data.password,
           firstName: data.firstName || "",
           lastName: data.lastName || "",
           rePassword: data.rePassword || "",
-          redirect: false, // مهم: redirect را خودمان مدیریت می‌کنیم
+          redirect: false,
           callbackUrl: "/dashboard",
         });
 
-        console.log("NextAuth result:", result);
-
         if (result?.error) {
-          console.error("❌ NextAuth error:", result.error);
           throw new Error(result.error);
         }
 
         if (result?.ok) {
-          console.log("✅ Authentication successful, preparing redirect...");
-
-          // 🔴 تنظیم وضعیت redirect
           setRedirecting(true);
 
-          // کمی صبر کنیم تا session به‌روزرسانی شود
           await new Promise((resolve) => setTimeout(resolve, 500));
 
-          // استفاده از Next.js router برای redirect بهتر
           router.push("/dashboard");
 
-          // صبر اضافی برای اطمینان از redirect
           await new Promise((resolve) => setTimeout(resolve, 1000));
 
           return true;
@@ -115,9 +101,6 @@ export const useAuth = () => {
 
         throw new Error("Authentication failed - unknown error");
       } catch (error: any) {
-        console.error("❌ Authentication error:", error);
-
-        // 🔴 reset کردن وضعیت‌ها در صورت خطا
         setLoading(false);
         setRedirecting(false);
 
@@ -137,7 +120,7 @@ export const useAuth = () => {
     goToStep,
     resetToEmail,
     setLoading,
-    setRedirecting, // 🔴 اضافه شد
+    setRedirecting,
     completeAuthWithNextAuth,
   };
 };

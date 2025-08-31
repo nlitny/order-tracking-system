@@ -1,4 +1,3 @@
-// components/layout/sidebar/SidebarFooter.tsx
 "use client";
 import React from "react";
 import { Box, Typography, alpha } from "@mui/material";

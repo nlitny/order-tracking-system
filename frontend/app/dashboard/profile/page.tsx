@@ -1,4 +1,3 @@
-// app/profile/page.tsx
 "use client";
 
 import React from "react";
@@ -11,7 +10,7 @@ import { ProfileSkeleton } from "@/components/profile/ProfileSkeleton";
 import { useUserData } from "@/context/UserContext";
 
 export default function ProfilePage() {
-  const { user, loading } = useUserData(); // از context استفاده کن
+  const { user, loading } = useUserData();
   const {
     updating,
     changingPassword,
@@ -65,7 +64,6 @@ export default function ProfilePage() {
         </Box>
       </Stack>
 
-      {/* Profile Form - حذف user prop */}
       <Box mb={3}>
         <ProfileForm updating={updating} onUpdate={updateProfile} />
       </Box>

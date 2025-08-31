@@ -1,4 +1,3 @@
-// services/notificationService.ts
 import axiosInstance from "@/lib/axios/csrAxios";
 import {
   NotificationsResponse,

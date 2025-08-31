@@ -1,4 +1,3 @@
-// hooks/useNotifications.ts
 import { useNotificationContext } from "@/context/NotificationContext";
 import { useCallback } from "react";
 
@@ -18,7 +17,6 @@ export const useNotifications = () => {
     getRecentNotifications,
   } = context;
 
-  // Additional helper functions
   const hasUnreadNotifications = useCallback(() => {
     return unreadCount > 0;
   }, [unreadCount]);

@@ -1,4 +1,3 @@
-// contexts/NotificationContext.tsx
 "use client";
 import React, {
   createContext,
@@ -161,9 +160,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
         type: "SET_UNREAD_COUNT",
         payload: response.data.unreadCount,
       });
-    } catch (error: any) {
-      console.error("Failed to fetch unread count:", error);
-    }
+    } catch (error: any) {}
   }, []);
 
   const markAsRead = useCallback(
@@ -199,7 +196,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
     (limit: number = 8) => {
       return state.notifications
         .sort((a, b) => {
-          // مرتب‌سازی بر اساس خوانده نشده، سپس زمان
           if (a.isRead !== b.isRead) return a.isRead ? 1 : -1;
           return new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime();
         })

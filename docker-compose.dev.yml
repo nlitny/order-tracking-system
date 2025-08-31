@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   db:
@@ -23,17 +23,17 @@ services:
       - order-tracking-network
 
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: order-tracking-backend
     restart: unless-stopped
     ports:
       - "5000:5000"
+    env_file:
+      - .env
     environment:
-      - NODE_ENV=${NODE_ENV}
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public
-      - JWT_SECRET=${JWT_SECRET}
-      - API_KEY=${API_KEY}
-      - PORT=${PORT}
+      - DATABASE_URL=postgresql://${ORDERTRACKING_USER}:${ORDERTRACKING_PASSWORD}@db:5432/${ORDERTRACKING_DB}?schema=public
     volumes:
       - ./backend:/app
       - /app/node_modules
@@ -44,13 +44,18 @@ services:
       - order-tracking-network
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     container_name: order-tracking-frontend
     restart: unless-stopped
     ports:
       - "3000:3000"
+    env_file:
+      - .env
     environment:
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+      - NEXT_PUBLIC_API_BASEURL=http://localhost:5000
+      - NEXT_PUBLIC_API_URL=http://localhost:5000
     volumes:
       - ./frontend:/app
       - /app/node_modules

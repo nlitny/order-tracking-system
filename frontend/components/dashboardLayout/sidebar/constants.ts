@@ -1,5 +1,3 @@
-// components/layout/sidebar/constants.ts
-
 export const brandColors = {
   navy: "#27445D",
   teal: "#497D74",

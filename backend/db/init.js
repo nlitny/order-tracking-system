@@ -2,16 +2,45 @@ const { Client } = require("pg");
 const { execSync } = require("child_process");
 const path = require("path");
 
-// Load .env
+// Load .env from root
 require("dotenv").config({ path: path.resolve(__dirname, "../../.env") });
 
+async function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitForDB(maxRetries = 30) {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const client = new Client({
+        user: process.env.POSTGRES_USER,
+        host: "db",
+        database: process.env.POSTGRES_DB,
+        password: process.env.POSTGRES_PASSWORD,
+        port: 5432,
+      });
+
+      await client.connect();
+      await client.end();
+      console.log("Database connection successful!");
+      return true;
+    } catch (err) {
+      console.log(`Waiting for database... (${i + 1}/${maxRetries})`);
+      await sleep(2000);
+    }
+  }
+  throw new Error("Could not connect to database after multiple attempts");
+}
+
 async function initDB() {
+  await waitForDB();
+
   const client = new Client({
     user: process.env.POSTGRES_USER,
-    host: process.env.POSTGRES_HOST,
+    host: "db",
     database: process.env.POSTGRES_DB,
     password: process.env.POSTGRES_PASSWORD,
-    port: Number(process.env.POSTGRES_PORT),
+    port: 5432,
   });
 
   try {
@@ -48,17 +77,28 @@ async function initDB() {
 
     console.log("Database initialized");
 
-    // Prisma migrations
-    console.log("Running Prisma migrations & seed...");
-    execSync("npx prisma generate", { stdio: "inherit" });
-    execSync("npx prisma migrate dev --name init", { stdio: "inherit" });
+    await client.end();
 
-    console.log("Prisma migrations & seed finished");
+    // Connect to the app database for migrations
+    const appClient = new Client({
+      user: process.env.ORDERTRACKING_USER,
+      host: "db",
+      database: process.env.ORDERTRACKING_DB,
+      password: process.env.ORDERTRACKING_PASSWORD,
+      port: 5432,
+    });
+
+    await appClient.connect();
+    await appClient.end();
+
+    // Prisma migrations
+    console.log("Running Prisma migrations...");
+    execSync("npx prisma migrate deploy", { stdio: "inherit" });
+    console.log("Prisma migrations finished");
   } catch (err) {
     console.error("Error initializing database:", err);
-  } finally {
-    await client.end();
+    throw err;
   }
 }
 
-initDB();
+initDB().catch(console.error);

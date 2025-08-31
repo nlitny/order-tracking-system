@@ -1,4 +1,3 @@
-// AuthForm.tsx (بخش های مهم که باید تغییر کند)
 "use client";
 
 import React, { useState, useCallback, useMemo } from "react";
@@ -23,9 +22,8 @@ import { AuthFormData, AuthStep, ValidationErrors } from "../utils/types";
 import { validateForm } from "../utils/validation";
 import { brandColors } from "@/theme/theme";
 import { useToast } from "@/lib/toast/toast";
-import { useAuth } from "@/hooks/useAuth"; // اضافه شد
+import { useAuth } from "@/hooks/useAuth";
 import axiosInstance from "@/lib/axios/csrAxios";
-
 
 const AuthForm: React.FC = () => {
   const theme = useTheme();
@@ -33,7 +31,6 @@ const AuthForm: React.FC = () => {
   const { showToast, showSuccessToast, showErrorToast, showInfoToast } =
     useToast();
 
-  // استفاده از custom hook
   const {
     authState,
     formData,
@@ -45,7 +42,6 @@ const AuthForm: React.FC = () => {
     completeAuthWithNextAuth,
   } = useAuth();
 
-  // Step configuration
   const stepConfig = useMemo(() => {
     const configs = {
       email: { buttonText: "Continue" },
@@ -55,7 +51,6 @@ const AuthForm: React.FC = () => {
     return configs[authState.step] || configs.email;
   }, [authState.step]);
 
-  // Form submission handler - تغییر یافته
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -72,7 +67,6 @@ const AuthForm: React.FC = () => {
       setErrors({});
 
       if (authState.step === "email") {
-        // مرحله اول - ارسال ایمیل
         const submitData = { email: formData.email };
         const response = await axiosInstance.post(
           "/auth/authlogin",
@@ -88,7 +82,6 @@ const AuthForm: React.FC = () => {
           showInfoToast(message || "Please complete your registration");
         }
       } else if (authState.step === "login" || authState.step === "register") {
-        // مرحله نهایی - استفاده از NextAuth
         const authData: any = {
           email: formData.email,
           password: formData.password,

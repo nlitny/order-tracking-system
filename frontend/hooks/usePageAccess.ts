@@ -1,4 +1,3 @@
-// hooks/usePageAccess.ts
 "use client";
 import { usePathname } from "next/navigation";
 import { useMemo } from "react";
@@ -14,7 +13,7 @@ export function usePageAccess() {
     if (!isSessionReady || loading) {
       return {
         hasAccess: false,
-        userRoles: [] as UserRole[], // تایپ explicit اضافه کردیم
+        userRoles: [] as UserRole[],
         allowedPages: [],
         currentPath: pathname,
         isLoading: true,
@@ -26,7 +25,7 @@ export function usePageAccess() {
     if (!user?.role) {
       return {
         hasAccess: false,
-        userRoles: [] as UserRole[], // تایپ explicit اضافه کردیم
+        userRoles: [] as UserRole[],
         allowedPages: [],
         currentPath: pathname,
         isLoading: false,
@@ -35,7 +34,7 @@ export function usePageAccess() {
       };
     }
 
-    const userRoles: UserRole[] = [user.role as UserRole]; // تایپ explicit
+    const userRoles: UserRole[] = [user.role as UserRole];
     const hasAccess = checkPageAccess(pathname, userRoles);
     const allowedPages = getUserAllowedPages(userRoles);
 

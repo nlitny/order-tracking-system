@@ -1,4 +1,3 @@
-// components/layout/AppBar.tsx
 "use client";
 import React from "react";
 import {
@@ -63,6 +62,7 @@ export default function AppBarComponent({
   const router = useRouter();
   const isXs = useMediaQuery(theme.breakpoints.down("sm"));
   const { unreadCount } = useNotifications();
+
   const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setProfileAnchorEl(event.currentTarget);
   };
@@ -178,6 +178,7 @@ export default function AppBarComponent({
               </IconButton>
             </Tooltip>
           </Box>
+
           <Box
             sx={{
               display: "flex",
@@ -185,48 +186,43 @@ export default function AppBarComponent({
               gap: { xs: 0.5, sm: 1 },
             }}
           >
-            {!isXs && (
-              <>
-                <Tooltip title="Notifications">
-                  <IconButton
-                    color="inherit"
-                    onClick={onNotificationToggle}
-                    sx={{
-                      p: { sm: 1, md: 1.2 },
-                      borderRadius: 1,
-                      color: theme.palette.text.primary,
-                      "&:hover": {
-                        backgroundColor: alpha(
-                          theme.palette.primary.main,
-                          0.08
-                        ),
-                        transform: "scale(1.05)",
-                      },
-                      transition: theme.transitions.create([
-                        "background-color",
-                        "transform",
-                      ]),
-                    }}
-                  >
-                    <Badge
-                      badgeContent={unreadCount}
-                      color="error"
-                      sx={{
-                        "& .MuiBadge-badge": {
-                          fontSize: { sm: "0.7rem", md: "0.75rem" },
-                          minWidth: { sm: 16, md: 18 },
-                          height: { sm: 16, md: 18 },
-                        },
-                      }}
-                    >
-                      <NotificationsIcon
-                        sx={{ fontSize: { sm: 20, md: 30 } }}
-                      />
-                    </Badge>
-                  </IconButton>
-                </Tooltip>
-              </>
-            )}
+            <Tooltip title="Notifications">
+              <IconButton
+                color="inherit"
+                onClick={onNotificationToggle}
+                sx={{
+                  p: { xs: 1, sm: 1, md: 1.2 },
+                  borderRadius: 1,
+                  color: theme.palette.text.primary,
+                  "&:hover": {
+                    backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                    transform: "scale(1.05)",
+                  },
+                  transition: theme.transitions.create([
+                    "background-color",
+                    "transform",
+                  ]),
+                }}
+              >
+                <Badge
+                  badgeContent={unreadCount}
+                  color="error"
+                  sx={{
+                    "& .MuiBadge-badge": {
+                      fontSize: { xs: "0.65rem", sm: "0.7rem", md: "0.75rem" },
+                      minWidth: { xs: 18, sm: 18, md: 20 },
+                      height: { xs: 18, sm: 18, md: 20 },
+                    },
+                  }}
+                >
+                  <NotificationsIcon
+                    sx={{ fontSize: { xs: 26, sm: 28, md: 28 } }}
+                  />
+                </Badge>
+              </IconButton>
+            </Tooltip>
+
+            {/* Profile Avatar */}
             <Tooltip title="Account Settings">
               <IconButton
                 onClick={handleProfileMenuOpen}
@@ -263,27 +259,10 @@ export default function AppBarComponent({
                 </Avatar>
               </IconButton>
             </Tooltip>
-            {isXs && (
-              <Tooltip title="More Options">
-                <IconButton
-                  color="inherit"
-                  onClick={handleMoreMenuOpen}
-                  sx={{
-                    p: 1,
-                    borderRadius: 1,
-                    color: theme.palette.text.primary,
-                    "&:hover": {
-                      backgroundColor: alpha(theme.palette.primary.main, 0.08),
-                    },
-                  }}
-                >
-                  <MoreVertIcon sx={{ fontSize: 20 }} />
-                </IconButton>
-              </Tooltip>
-            )}
           </Box>
         </Toolbar>
       </AppBar>
+
       <ProfileMenu
         anchorEl={profileAnchorEl}
         open={Boolean(profileAnchorEl)}
@@ -292,63 +271,6 @@ export default function AppBarComponent({
         onProfileClick={handleMyProfileClick}
         onSettingsClick={handleSettingsClick}
       />
-      <Menu
-        anchorEl={moreAnchorEl}
-        open={Boolean(moreAnchorEl)}
-        onClose={handleMenuClose}
-        PaperProps={{
-          elevation: 8,
-          sx: {
-            mt: 1.5,
-            minWidth: 180,
-            borderRadius: 1,
-            overflow: "visible",
-            filter: "drop-shadow(0px 4px 16px rgba(0,0,0,0.15))",
-            "&:before": {
-              content: '""',
-              display: "block",
-              position: "absolute",
-              top: 0,
-              right: 14,
-              width: 10,
-              height: 10,
-              bgcolor: "background.paper",
-              transform: "translateY(-50%) rotate(45deg)",
-              zIndex: 0,
-            },
-          },
-        }}
-        transformOrigin={{ horizontal: "right", vertical: "top" }}
-        anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
-      >
-        <MenuItem
-          onClick={() => {
-            handleMenuClose();
-            onNotificationToggle();
-          }}
-          sx={{
-            py: 1.5,
-            px: 2,
-            "&:hover": {
-              backgroundColor: alpha(theme.palette.primary.main, 0.08),
-            },
-          }}
-        >
-          <ListItemIcon>
-            <Badge
-              badgeContent={unreadCount}
-              color="error"
-              sx={{ "& .MuiBadge-badge": { fontSize: "0.7rem" } }}
-            >
-              <NotificationsIcon fontSize="small" />
-            </Badge>
-          </ListItemIcon>
-          <ListItemText
-            primary="Notifications"
-            primaryTypographyProps={{ fontSize: "0.9rem" }}
-          />
-        </MenuItem>
-      </Menu>
     </>
   );
 }

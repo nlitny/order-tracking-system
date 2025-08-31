@@ -1,4 +1,3 @@
-// app/auth/hooks/useToast.tsx
 "use client";
 
 import {
@@ -120,7 +119,6 @@ const StyledAlert = styled(Alert, {
     },
   };
 
-  // رنگ‌بندی بر اساس تم شما - بدون شیشه‌ای
   const colorConfig = {
     success: {
       main: brandColors.lightTeal, // #71BBB2
@@ -192,7 +190,7 @@ const StyledAlert = styled(Alert, {
     case "outlined":
       return {
         ...baseStyles,
-        background: colors.bg, // Solid light background
+        background: colors.bg,
         border: `2px solid ${colors.main}`,
         color: colors.contrast,
         boxShadow: `0 2px 12px ${alpha(colors.main, 0.15)}`,
@@ -210,7 +208,7 @@ const StyledAlert = styled(Alert, {
     case "standard":
       return {
         ...baseStyles,
-        background: colors.bg, // Solid light background
+        background: colors.bg,
         color: colors.contrast,
         border: `1px solid ${alpha(colors.main, 0.3)}`,
         boxShadow: `0 2px 8px ${alpha(theme.palette.grey[400], 0.15)}`,
@@ -224,7 +222,7 @@ const StyledAlert = styled(Alert, {
         },
       };
 
-    default: // glass - but with solid background for better readability
+    default:
       return {
         ...baseStyles,
         background: `linear-gradient(135deg, ${colors.bg} 0%, ${alpha(
@@ -604,21 +602,13 @@ export function useToast(): ToastContextType {
 }
 
 export function createStandaloneToast() {
-  let showSuccessToast = (message: string, options?: ToastOptions) => {
-    console.log("✅ Success:", message);
-  };
+  let showSuccessToast = (message: string, options?: ToastOptions) => {};
 
-  let showErrorToast = (message: string, options?: ToastOptions) => {
-    console.error("❌ Error:", message);
-  };
+  let showErrorToast = (message: string, options?: ToastOptions) => {};
 
-  let showInfoToast = (message: string, options?: ToastOptions) => {
-    console.info("ℹ️ Info:", message);
-  };
+  let showInfoToast = (message: string, options?: ToastOptions) => {};
 
-  let showWarningToast = (message: string, options?: ToastOptions) => {
-    console.warn("⚠️ Warning:", message);
-  };
+  let showWarningToast = (message: string, options?: ToastOptions) => {};
 
   if (typeof window !== "undefined") {
     try {
@@ -632,9 +622,7 @@ export function createStandaloneToast() {
         if (contextData.showInfo) showInfoToast = contextData.showInfo;
         if (contextData.showWarning) showWarningToast = contextData.showWarning;
       }
-    } catch (error) {
-      console.error("Failed to get toast context", error);
-    }
+    } catch (error) {}
   }
 
   return {

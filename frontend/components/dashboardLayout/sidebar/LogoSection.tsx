@@ -1,4 +1,4 @@
-// components/layout/sidebar/LogoSection.tsx
+
 "use client";
 import React from "react";
 import {
@@ -9,6 +9,7 @@ import {
   Tooltip,
   useTheme,
   alpha,
+  Paper,
 } from "@mui/material";
 import { Close as CloseIcon } from "@mui/icons-material";
 import Link from "next/link";
@@ -31,7 +32,8 @@ export default function LogoSection({
   const theme = useTheme();
 
   return (
-    <Box
+    <Paper
+      elevation={0}
       sx={{
         height: appBarHeight,
         display: "flex",
@@ -39,15 +41,27 @@ export default function LogoSection({
         justifyContent: collapsed && !isMobile ? "center" : "space-between",
         px: collapsed && !isMobile ? 1 : 3,
         py: 2,
-        borderBottom: `1px solid ${alpha(brandColors.teal, 0.15)}`,
+        borderBottom: `1px solid ${alpha(brandColors.teal, 0.12)}`,
         background: `linear-gradient(135deg, 
-          ${alpha(brandColors.navy, 0.05)} 0%, 
-          ${alpha(brandColors.teal, 0.03)} 100%)`,
+          ${alpha(brandColors.navy, 0.04)} 0%, 
+          ${alpha(brandColors.teal, 0.02)} 100%)`,
         position: "relative",
         minHeight: appBarHeight,
+        borderRadius: 0,
+        "&::after": {
+          content: '""',
+          position: "absolute",
+          bottom: 0,
+          left: "10%",
+          right: "10%",
+          height: "1px",
+          background: `linear-gradient(90deg, 
+            transparent, 
+            ${alpha(brandColors.teal, 0.3)}, 
+            transparent)`,
+        },
       }}
     >
-      {/* دکمه بستن موبایل */}
       {isMobile && (
         <IconButton
           onClick={onClose}
@@ -57,10 +71,17 @@ export default function LogoSection({
             right: 8,
             zIndex: 1,
             color: brandColors.navy,
+            backgroundColor: alpha(brandColors.lightTeal, 0.1),
+            border: `1px solid ${alpha(brandColors.teal, 0.2)}`,
             "&:hover": {
               color: brandColors.teal,
-              backgroundColor: alpha(brandColors.lightTeal, 0.12),
+              backgroundColor: alpha(brandColors.lightTeal, 0.2),
+              transform: "scale(1.05)",
             },
+            transition: theme.transitions.create([
+              "transform",
+              "background-color",
+            ]),
           }}
           size="small"
         >
@@ -68,7 +89,6 @@ export default function LogoSection({
         </IconButton>
       )}
 
-      {/* محتوای لوگو */}
       {!collapsed || isMobile ? (
         <Tooltip
           title="Visit Landing Page - Order Status Tracking System"
@@ -83,33 +103,47 @@ export default function LogoSection({
                 flex: 1,
                 pr: isMobile ? 5 : 0,
                 cursor: "pointer",
+                borderRadius: 1,
+                p: 1,
+                transition: theme.transitions.create([
+                  "transform",
+                  "background-color",
+                ]),
                 "&:hover": {
+                  backgroundColor: alpha(brandColors.teal, 0.05),
+                  transform: "translateY(-1px)",
                   "& .logo-avatar": {
-                    transform: "scale(1.05)",
+                    transform: "scale(1.05) rotate(2deg)",
                   },
                   "& .logo-text": {
                     transform: "translateX(2px)",
                   },
                 },
-                transition: theme.transitions.create(["transform"]),
               }}
             >
               <Box sx={{ position: "relative", mr: 2 }}>
                 <Avatar
                   className="logo-avatar"
                   sx={{
-                    width: 55,
-                    height: 55,
+                    width: 52,
+                    height: 52,
                     color: brandColors.cream,
-                    background: "none",
-                    transition: theme.transitions.create(["transform"]),
+                    background: `linear-gradient(135deg, 
+                      ${alpha(brandColors.teal, 0.1)} 0%, 
+                      ${alpha(brandColors.navy, 0.05)} 100%)`,
+                    border: `2px solid ${alpha(brandColors.teal, 0.2)}`,
+                    transition: theme.transitions.create([
+                      "transform",
+                      "box-shadow",
+                    ]),
+                    boxShadow: `0 4px 12px ${alpha(brandColors.teal, 0.2)}`,
                   }}
                 >
                   <Image
                     src="/images/minilogo.png"
                     alt="Order Status Tracking System Logo"
-                    width={70}
-                    height={50}
+                    width={35}
+                    height={35}
                     priority
                   />
                 </Avatar>
@@ -129,10 +163,10 @@ export default function LogoSection({
                     fontWeight: 700,
                     lineHeight: 1.2,
                     overflow: "hidden",
-                    fontSize: "1.25rem",
+                    fontSize: "1.1rem",
                     background: `linear-gradient(45deg, 
-                    ${brandColors.navy} 30%, 
-                    ${brandColors.teal} 90%)`,
+                      ${brandColors.navy} 30%, 
+                      ${brandColors.teal} 90%)`,
                     backgroundClip: "text",
                     WebkitBackgroundClip: "text",
                     WebkitTextFillColor: "transparent",
@@ -146,14 +180,15 @@ export default function LogoSection({
                 <Typography
                   variant="caption"
                   sx={{
-                    color: brandColors.teal,
-                    fontSize: "0.75rem",
+                    color: alpha(brandColors.teal, 0.8),
+                    fontSize: "0.7rem",
                     display: "block",
                     textAlign: "center",
                     fontWeight: 500,
                     textOverflow: "ellipsis",
                     overflow: "hidden",
                     whiteSpace: "nowrap",
+                    letterSpacing: "0.5px",
                   }}
                 >
                   Tracking System
@@ -175,28 +210,42 @@ export default function LogoSection({
                 justifyContent: "center",
                 width: "100%",
                 cursor: "pointer",
-                "&:hover .logo-avatar": {
-                  transform: "scale(1.1) rotate(5deg)",
+                borderRadius: 1,
+                p: 0.5,
+                transition: theme.transitions.create(["background-color"]),
+                "&:hover": {
+                  backgroundColor: alpha(brandColors.teal, 0.08),
+                  "& .logo-avatar": {
+                    transform: "scale(1.1) rotate(5deg)",
+                    boxShadow: `0 6px 16px ${alpha(brandColors.teal, 0.3)}`,
+                  },
                 },
               }}
             >
               <Avatar
                 className="logo-avatar"
                 sx={{
-                  width: 50,
-                  height: 50,
-                  background: "none",
+                  width: 42,
+                  height: 42,
+                  background: `linear-gradient(135deg, 
+                    ${alpha(brandColors.teal, 0.1)} 0%, 
+                    ${alpha(brandColors.navy, 0.05)} 100%)`,
+                  border: `2px solid ${alpha(brandColors.teal, 0.2)}`,
                   color: brandColors.cream,
-                  transition: theme.transitions.create(["transform"], {
-                    duration: 300,
-                  }),
+                  transition: theme.transitions.create(
+                    ["transform", "box-shadow"],
+                    {
+                      duration: 300,
+                    }
+                  ),
+                  boxShadow: `0 4px 12px ${alpha(brandColors.teal, 0.2)}`,
                 }}
               >
                 <Image
                   src="/images/minilogo.png"
                   alt="Order Status Tracking System Logo"
-                  width={50}
-                  height={50}
+                  width={28}
+                  height={28}
                   priority
                 />
               </Avatar>
@@ -204,6 +253,6 @@ export default function LogoSection({
           </Link>
         </Tooltip>
       )}
-    </Box>
+    </Paper>
   );
 }
