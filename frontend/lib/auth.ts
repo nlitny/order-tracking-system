@@ -3,23 +3,17 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import axios from "axios";
 import { UserRole } from "@/types/types";
 
-// Helper function برای تشخیص API URL
 function getApiUrl(): string {
-  // اگر در server-side هستیم (typeof window === 'undefined')
   if (typeof window === "undefined") {
-    // اول بررسی می‌کنیم که INTERNAL_API_URL تنظیم شده باشد
     if (process.env.INTERNAL_API_URL) {
       return process.env.INTERNAL_API_URL;
     }
-    // اگر نه، از backend container استفاده می‌کنیم
     return "http://backend:5000";
   }
 
-  // برای client-side از localhost استفاده می‌کنیم
   return process.env.NEXT_PUBLIC_API_BASEURL || "http://localhost:5000";
 }
 
-// باقی interfaces همان...
 interface UserWithAuth {
   id: string;
   email: string;
@@ -74,8 +68,18 @@ interface RefreshTokenResponse {
 
 function parseExpirationTime(timeString: string): number {
   const currentTime = Date.now();
-  const unit = timeString.slice(-1);
-  const value = parseInt(timeString.slice(0, -1));
+
+  const match = timeString.match(/^(\d+)([smhd])$/);
+
+  if (!match) {
+    console.warn(
+      `[NextAuth] Invalid time format: ${timeString}, using default 1 hour`
+    );
+    return Math.floor((currentTime + 60 * 60 * 1000) / 1000);
+  }
+
+  const value = parseInt(match[1]);
+  const unit = match[2];
 
   const multipliers: Record<string, number> = {
     s: 1000,
@@ -84,10 +88,9 @@ function parseExpirationTime(timeString: string): number {
     d: 24 * 60 * 60 * 1000,
   };
 
-  const expireTimeMs = currentTime + value * (multipliers[unit] || 1000);
-  const safeExpireTimeMs = expireTimeMs - 60000;
+  const expireTimeMs = currentTime + value * multipliers[unit];
 
-  return Math.floor(safeExpireTimeMs / 1000);
+  return Math.floor(expireTimeMs / 1000);
 }
 
 export const authOptions: NextAuthOptions = {
@@ -121,15 +124,14 @@ export const authOptions: NextAuthOptions = {
             }
           }
 
-          // استفاده از helper function
           const apiUrl = getApiUrl();
-          console.log(`[NextAuth] Making request to: ${apiUrl}`); // Debug log
+          console.log(`[NextAuth] Making request to: ${apiUrl}`);
 
           const { data } = await axios.post<AuthSuccessResponse>(
             `${apiUrl}/api/v1/auth/authlogin`,
             requestData,
             {
-              timeout: 10000, // 10 second timeout
+              timeout: 15000,
             }
           );
 
@@ -171,7 +173,7 @@ export const authOptions: NextAuthOptions = {
             ),
           } as UserWithAuth;
         } catch (error) {
-          console.error("[NextAuth] Authorize error:", error); // Debug log
+          console.error("[NextAuth] Authorize error:", error);
 
           if (axios.isAxiosError(error)) {
             const errorMessage =
@@ -193,7 +195,7 @@ export const authOptions: NextAuthOptions = {
 
   callbacks: {
     async redirect({ url, baseUrl }) {
-      console.log(`[NextAuth] Redirect: ${url} -> baseUrl: ${baseUrl}`); // Debug log
+      console.log(`[NextAuth] Redirect: ${url} -> baseUrl: ${baseUrl}`);
       if (url.startsWith("/")) return `${baseUrl}${url}`;
       if (new URL(url).origin === baseUrl) return url;
       return `${baseUrl}/dashboard`;
@@ -229,24 +231,49 @@ export const authOptions: NextAuthOptions = {
 
       const currentTime = Math.floor(Date.now() / 1000);
 
+      const ACCESS_TOKEN_BUFFER = 5 * 60;
+      const REFRESH_TOKEN_BUFFER = 1 * 60;
+
       if (
         token.refreshTokenExpires &&
-        currentTime >= Number(token.refreshTokenExpires)
+        currentTime >= Number(token.refreshTokenExpires) - REFRESH_TOKEN_BUFFER
       ) {
+        console.log(
+          "[NextAuth] Refresh token expired, user needs to login again"
+        );
         return { ...token, error: "RefreshTokenExpired" };
       }
 
       if (
         token.accessTokenExpires &&
-        currentTime < Number(token.accessTokenExpires)
+        currentTime < Number(token.accessTokenExpires) - ACCESS_TOKEN_BUFFER
       ) {
+        console.log("[NextAuth] Token status:", {
+          currentTime: new Date(currentTime * 1000).toISOString(),
+          accessExpires: new Date(
+            Number(token.accessTokenExpires) * 1000
+          ).toISOString(),
+          refreshExpires: new Date(
+            Number(token.refreshTokenExpires) * 1000
+          ).toISOString(),
+          timeUntilExpiry: Number(token.accessTokenExpires) - currentTime,
+          needsRefresh: false,
+        });
+
         return token;
       }
 
       try {
-        // استفاده از helper function برای refresh token هم
+        console.log("[NextAuth] Attempting to refresh access token...");
+        console.log("[NextAuth] Token refresh needed:", {
+          currentTime: new Date(currentTime * 1000).toISOString(),
+          accessExpires: new Date(
+            Number(token.accessTokenExpires) * 1000
+          ).toISOString(),
+        });
+
         const apiUrl = getApiUrl();
-        console.log(`[NextAuth] Refresh token request to: ${apiUrl}`); // Debug log
+        console.log(`[NextAuth] Refresh token request to: ${apiUrl}`);
 
         const { data } = await axios.post<RefreshTokenResponse>(
           `${apiUrl}/api/v1/auth/refresh-token`,
@@ -257,13 +284,15 @@ export const authOptions: NextAuthOptions = {
             headers: {
               "Content-Type": "application/json",
             },
-            timeout: 10000,
+            timeout: 15000,
           }
         );
 
         if (!data.success || !data.data) {
           throw new Error(data.message || "Token refresh failed");
         }
+
+        console.log("[NextAuth] Token refreshed successfully");
 
         return {
           ...token,
@@ -277,7 +306,7 @@ export const authOptions: NextAuthOptions = {
           ),
         };
       } catch (error) {
-        console.error("[NextAuth] Token refresh error:", error); // Debug log
+        console.error("[NextAuth] Token refresh failed:", error);
 
         if (axios.isAxiosError(error)) {
           const status = error.response?.status;
@@ -318,9 +347,12 @@ export const authOptions: NextAuthOptions = {
     signIn: "/auth",
     error: "/auth/error",
   },
+
   session: {
     strategy: "jwt",
-    maxAge: 29 * 24 * 60 * 60,
+    maxAge: 24 * 60 * 60,
+    updateAge: 60 * 60,
   },
-  debug: true, // فعلاً برای دیباگ روشن کنید
+
+  debug: true,
 };
