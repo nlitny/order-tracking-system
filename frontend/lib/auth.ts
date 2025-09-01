@@ -3,6 +3,23 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import axios from "axios";
 import { UserRole } from "@/types/types";
 
+// Helper function برای تشخیص API URL
+function getApiUrl(): string {
+  // اگر در server-side هستیم (typeof window === 'undefined')
+  if (typeof window === "undefined") {
+    // اول بررسی می‌کنیم که INTERNAL_API_URL تنظیم شده باشد
+    if (process.env.INTERNAL_API_URL) {
+      return process.env.INTERNAL_API_URL;
+    }
+    // اگر نه، از backend container استفاده می‌کنیم
+    return "http://backend:5000";
+  }
+
+  // برای client-side از localhost استفاده می‌کنیم
+  return process.env.NEXT_PUBLIC_API_BASEURL || "http://localhost:5000";
+}
+
+// باقی interfaces همان...
 interface UserWithAuth {
   id: string;
   email: string;
@@ -68,7 +85,6 @@ function parseExpirationTime(timeString: string): number {
   };
 
   const expireTimeMs = currentTime + value * (multipliers[unit] || 1000);
-
   const safeExpireTimeMs = expireTimeMs - 60000;
 
   return Math.floor(safeExpireTimeMs / 1000);
@@ -105,12 +121,16 @@ export const authOptions: NextAuthOptions = {
             }
           }
 
-          const apiUrl =
-            process.env.NEXT_PUBLIC_API_BASEURL || "http://localhost:5000";
+          // استفاده از helper function
+          const apiUrl = getApiUrl();
+          console.log(`[NextAuth] Making request to: ${apiUrl}`); // Debug log
 
           const { data } = await axios.post<AuthSuccessResponse>(
             `${apiUrl}/api/v1/auth/authlogin`,
-            requestData
+            requestData,
+            {
+              timeout: 10000, // 10 second timeout
+            }
           );
 
           if (!data.success || !data.data) {
@@ -151,11 +171,13 @@ export const authOptions: NextAuthOptions = {
             ),
           } as UserWithAuth;
         } catch (error) {
+          console.error("[NextAuth] Authorize error:", error); // Debug log
+
           if (axios.isAxiosError(error)) {
             const errorMessage =
               error.response?.data?.message ||
               error.response?.data?.error ||
-              "Authentication failed";
+              `Network error: ${error.message}`;
             throw new Error(errorMessage);
           }
 
@@ -171,6 +193,7 @@ export const authOptions: NextAuthOptions = {
 
   callbacks: {
     async redirect({ url, baseUrl }) {
+      console.log(`[NextAuth] Redirect: ${url} -> baseUrl: ${baseUrl}`); // Debug log
       if (url.startsWith("/")) return `${baseUrl}${url}`;
       if (new URL(url).origin === baseUrl) return url;
       return `${baseUrl}/dashboard`;
@@ -221,8 +244,9 @@ export const authOptions: NextAuthOptions = {
       }
 
       try {
-        const apiUrl =
-          process.env.NEXT_PUBLIC_API_BASEURL || "http://localhost:5000";
+        // استفاده از helper function برای refresh token هم
+        const apiUrl = getApiUrl();
+        console.log(`[NextAuth] Refresh token request to: ${apiUrl}`); // Debug log
 
         const { data } = await axios.post<RefreshTokenResponse>(
           `${apiUrl}/api/v1/auth/refresh-token`,
@@ -253,6 +277,8 @@ export const authOptions: NextAuthOptions = {
           ),
         };
       } catch (error) {
+        console.error("[NextAuth] Token refresh error:", error); // Debug log
+
         if (axios.isAxiosError(error)) {
           const status = error.response?.status;
           if (status === 401 || status === 403) {
@@ -296,5 +322,5 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
     maxAge: 29 * 24 * 60 * 60,
   },
-  debug: process.env.NODE_ENV === "development",
+  debug: true, // فعلاً برای دیباگ روشن کنید
 };

@@ -35,8 +35,8 @@ services:
     environment:
       - DATABASE_URL=postgresql://${ORDERTRACKING_USER}:${ORDERTRACKING_PASSWORD}@db:5432/${ORDERTRACKING_DB}?schema=public
       - NODE_ENV=production
-      - CORS_ORIGIN=http://localhost:3000,http://frontend:3000
-      - ALLOWED_ORIGINS=http://localhost:3000,http://frontend:3000
+      - CORS_ORIGIN=http://frontend:3000
+      - ALLOWED_ORIGINS=http://frontend:3000
     depends_on:
       db:
         condition: service_healthy
@@ -48,20 +48,20 @@ services:
       context: .
       dockerfile: ./frontend/Dockerfile.prod
       args:
-        - NEXT_PUBLIC_API_BASEURL=http://localhost:5000
-        - NEXT_PUBLIC_API_URL=http://localhost:5000
+        - NEXT_PUBLIC_API_BASEURL=http://backend:5000
+        - NEXT_PUBLIC_API_URL=http://backend:5000
         - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
-        - NEXTAUTH_URL=http://localhost:3000
+        - NEXTAUTH_URL=http://frontend:3000
     container_name: order-tracking-frontend-prod
     restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_BASEURL=http://localhost:5000
-      - NEXT_PUBLIC_API_URL=http://localhost:5000
+      - NEXT_PUBLIC_API_BASEURL=http://backend:5000
+      - NEXT_PUBLIC_API_URL=http://backend:5000
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
-      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_URL=http://frontend:3000
     depends_on:
       - backend
     networks:

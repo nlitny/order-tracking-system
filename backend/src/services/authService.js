@@ -253,8 +253,8 @@ const generateAuthTokens = async (user) => {
   return {
     accessToken,
     refreshToken,
-    accessTokenExpiresIn: "15m",
-    refreshTokenExpiresIn: "7d",
+    accessTokenExpiresIn: "1d",
+    refreshTokenExpiresIn: "30d",
   };
 };
 
