@@ -2,7 +2,7 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Install dependencies first
+# Install dependencies
 COPY package*.json ./
 RUN npm install && npm install -g nodemon
 
@@ -10,12 +10,11 @@ RUN npm install && npm install -g nodemon
 COPY prisma ./prisma/
 RUN npx prisma generate
 
-# Copy the rest of the application
+# Copy the rest of the app
 COPY . .
 
-# Create a startup script
-COPY start.sh ./
-RUN chmod +x start.sh
+# Fix line endings + make script executable
+RUN sed -i 's/\r$//' start.sh && chmod +x start.sh
 
 EXPOSE 5000
 
