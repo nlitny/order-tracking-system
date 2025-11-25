@@ -9,9 +9,7 @@
     "db:migrate": "prisma migrate dev",
     "db:reset": "prisma migrate reset",
     "db:studio": "prisma studio",
-    "seed": "node prisma/seed.js",
-    "build": "prisma generate",
-    "postinstall": "prisma generate"
+    "seed": "node prisma/seed.js"
   },
   "keywords": [],
   "author": "sadafpj",
