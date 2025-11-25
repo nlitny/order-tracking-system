@@ -44,8 +44,16 @@ app.get("/health", (req, res) => {
 });
 
 // Swagger docs
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-
+app.use(
+  "/api-docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    customCssUrl:
+      "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui.css",
+    customJs:
+      "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui-bundle.js",
+  })
+);
 
 // Routes
 app.use("/api/v1/auth", authRoutes);
