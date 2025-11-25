@@ -15,7 +15,7 @@ const orderRoutes = require("./src/routes/orders");
 const customerMediaRoutes = require("./src/routes/customerMedia");
 const mediaFileRoutes = require("./src/routes/mediaFile");
 const notificationRoutes = require("./src/routes/notification");
-
+const swaggerUiDist = require("swagger-ui-dist");
 const swaggerUi = require("swagger-ui-express");
 const { swaggerSpec } = require("./src/config/swagger");
 const securityMiddleware = require("./src/middleware/securityMiddleware");
@@ -44,7 +44,11 @@ app.get("/health", (req, res) => {
 });
 
 // Swagger docs
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use('/swagger-ui-dist', express.static(swaggerUiDist.getAbsoluteFSPath()));
+
+app.get('/api-docs', (req, res) => {
+  res.sendFile(swaggerUiDist.getAbsoluteFSPath() + '/index.html');
+});
 
 // Routes
 app.use("/api/v1/auth", authRoutes);
