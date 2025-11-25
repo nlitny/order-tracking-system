@@ -9,7 +9,7 @@ const errorHandler = require("./src/middleware/errorHandler");
 const notFoundHandler = require("./src/middleware/notFound");
 
 const authRoutes = require("./src/routes/auth");
-const userRoutes = require("./src/routes/users"); 
+const userRoutes = require("./src/routes/users");
 const adminRoutes = require("./src/routes/admin");
 const orderRoutes = require("./src/routes/orders");
 const customerMediaRoutes = require("./src/routes/customerMedia");
@@ -44,7 +44,8 @@ app.get("/health", (req, res) => {
 });
 
 // Swagger docs
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use("/api-docs", swaggerUi.serve);
+app.get("/api-docs", swaggerUi.setup(swaggerSpec));
 
 // Routes
 app.use("/api/v1/auth", authRoutes);
