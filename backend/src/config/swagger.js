@@ -1,341 +1,327 @@
-const swaggerJSDoc = require("swagger-jsdoc");
-const path = require("path");
+const swaggerJSDoc = require('swagger-jsdoc');
+
 const options = {
   definition: {
-    openapi: "3.0.0",
+    openapi: '3.0.0',
     info: {
-      title: "Order Tracking API",
-      version: "1.0.0",
-      description:
-        "A comprehensive Order Tracking API with customer media upload capabilities.",
+      title: 'Order Tracking API',
+      version: '1.0.0',
+      description: 'A comprehensive Order Tracking API with customer media upload capabilities.',
       contact: {
-        name: "API Support",
-        email: "sadafpoorjab@gmail.com",
+        name: 'API Support',
+        email: 'sadafpoorjab@gmail.com'
       },
       license: {
-        name: "MIT",
-        url: "https://opensource.org/licenses/MIT",
-      },
+        name: 'MIT',
+        url: 'https://opensource.org/licenses/MIT'
+      }
     },
     servers: [
       {
         url: `http://localhost:${process.env.PORT || 5000}`,
-        description: "Development server",
+        description: 'Development server'
       },
       {
         url: `https://api.domain.com`,
-        description: "Production server",
-      },
+        description: 'Production server'
+      }
     ],
     components: {
       securitySchemes: {
         bearerAuth: {
-          type: "http",
-          scheme: "bearer",
-          bearerFormat: "JWT",
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT'
         },
         apiKeyAuth: {
-          type: "apiKey",
-          in: "header",
-          name: "x-api-key",
-        },
+          type: 'apiKey',
+          in: 'header',
+          name: 'x-api-key'
+        }
       },
       responses: {
         UnauthorizedError: {
-          description: "Authentication required or token invalid",
+          description: 'Authentication required or token invalid',
           content: {
-            "application/json": {
+            'application/json': {
               schema: {
-                $ref: "#/components/schemas/ErrorResponse",
+                $ref: '#/components/schemas/ErrorResponse'
               },
               examples: {
                 no_token: {
-                  summary: "No token provided",
+                  summary: 'No token provided',
                   value: {
                     success: false,
-                    message: "Authentication required",
-                    error: "UNAUTHORIZED",
-                  },
+                    message: 'Authentication required',
+                    error: 'UNAUTHORIZED'
+                  }
                 },
                 invalid_token: {
-                  summary: "Invalid or expired token",
+                  summary: 'Invalid or expired token',
                   value: {
                     success: false,
-                    message: "Invalid or expired token",
-                    error: "TOKEN_INVALID",
-                  },
-                },
-              },
-            },
-          },
+                    message: 'Invalid or expired token',
+                    error: 'TOKEN_INVALID'
+                  }
+                }
+              }
+            }
+          }
         },
         ForbiddenError: {
-          description: "Access denied - insufficient permissions",
+          description: 'Access denied - insufficient permissions',
           content: {
-            "application/json": {
+            'application/json': {
               schema: {
-                $ref: "#/components/schemas/ErrorResponse",
-              },
-            },
-          },
+                $ref: '#/components/schemas/ErrorResponse'
+              }
+            }
+          }
         },
         RateLimitError: {
-          description: "Too many requests - rate limit exceeded",
+          description: 'Too many requests - rate limit exceeded',
           content: {
-            "application/json": {
+            'application/json': {
               schema: {
-                $ref: "#/components/schemas/ErrorResponse",
-              },
-            },
-          },
+                $ref: '#/components/schemas/ErrorResponse'
+              }
+            }
+          }
         },
         ValidationError: {
-          description: "Request validation failed",
+          description: 'Request validation failed',
           content: {
-            "application/json": {
+            'application/json': {
               schema: {
-                $ref: "#/components/schemas/ErrorResponse",
-              },
-            },
-          },
+                $ref: '#/components/schemas/ErrorResponse'
+              }
+            }
+          }
         },
         NotFoundError: {
-          description: "Resource not found",
+          description: 'Resource not found',
           content: {
-            "application/json": {
+            'application/json': {
               schema: {
-                $ref: "#/components/schemas/ErrorResponse",
-              },
-            },
-          },
+                $ref: '#/components/schemas/ErrorResponse'
+              }
+            }
+          }
         },
         ConflictError: {
-          description: "Resource conflict - duplicate or constraint violation",
+          description: 'Resource conflict - duplicate or constraint violation',
           content: {
-            "application/json": {
+            'application/json': {
               schema: {
-                $ref: "#/components/schemas/ErrorResponse",
-              },
-            },
-          },
+                $ref: '#/components/schemas/ErrorResponse'
+              }
+            }
+          }
         },
         InternalServerError: {
-          description: "Internal server error",
+          description: 'Internal server error',
           content: {
-            "application/json": {
+            'application/json': {
               schema: {
-                $ref: "#/components/schemas/ErrorResponse",
-              },
-            },
-          },
-        },
+                $ref: '#/components/schemas/ErrorResponse'
+              }
+            }
+          }
+        }
       },
       schemas: {
         ErrorResponse: {
-          type: "object",
+          type: 'object',
           properties: {
             success: {
-              type: "boolean",
-              example: false,
+              type: 'boolean',
+              example: false
             },
             message: {
-              type: "string",
-              example: "An error occurred",
+              type: 'string',
+              example: 'An error occurred'
             },
             error: {
-              type: "string",
-              example: "VALIDATION_ERROR",
+              type: 'string',
+              example: 'VALIDATION_ERROR'
             },
             details: {
-              type: "object",
-              additionalProperties: true,
+              type: 'object',
+              additionalProperties: true
             },
             timestamp: {
-              type: "string",
-              format: "date-time",
+              type: 'string',
+              format: 'date-time'
             },
             path: {
-              type: "string",
-              example: "/api/v1/orders",
+              type: 'string',
+              example: '/api/v1/orders'
             },
             requestId: {
-              type: "string",
-              example: "req-123456789",
-            },
+              type: 'string',
+              example: 'req-123456789'
+            }
           },
-          required: ["success", "message", "error"],
+          required: ['success', 'message', 'error']
         },
         SuccessResponse: {
-          type: "object",
+          type: 'object',
           properties: {
             success: {
-              type: "boolean",
-              example: true,
+              type: 'boolean',
+              example: true
             },
             message: {
-              type: "string",
-              example: "Operation completed successfully",
+              type: 'string',
+              example: 'Operation completed successfully'
             },
             data: {
-              type: "object",
-              additionalProperties: true,
+              type: 'object',
+              additionalProperties: true
             },
             meta: {
-              type: "object",
+              type: 'object',
               properties: {
                 timestamp: {
-                  type: "string",
-                  format: "date-time",
+                  type: 'string',
+                  format: 'date-time'
                 },
                 requestId: {
-                  type: "string",
+                  type: 'string'
                 },
                 version: {
-                  type: "string",
-                },
-              },
-            },
+                  type: 'string'
+                }
+              }
+            }
           },
-          required: ["success", "message"],
+          required: ['success', 'message']
         },
         PaginationMeta: {
-          type: "object",
+          type: 'object',
           properties: {
             currentPage: {
-              type: "integer",
-              minimum: 1,
+              type: 'integer',
+              minimum: 1
             },
             totalPages: {
-              type: "integer",
-              minimum: 0,
+              type: 'integer',
+              minimum: 0
             },
             totalItems: {
-              type: "integer",
-              minimum: 0,
+              type: 'integer',
+              minimum: 0
             },
             hasNext: {
-              type: "boolean",
+              type: 'boolean'
             },
             hasPrev: {
-              type: "boolean",
+              type: 'boolean'
             },
             limit: {
-              type: "integer",
+              type: 'integer',
               minimum: 1,
-              maximum: 100,
-            },
+              maximum: 100
+            }
           },
-          required: [
-            "currentPage",
-            "totalPages",
-            "totalItems",
-            "hasNext",
-            "hasPrev",
-            "limit",
-          ],
-        },
+          required: ['currentPage', 'totalPages', 'totalItems', 'hasNext', 'hasPrev', 'limit']
+        }
       },
       parameters: {
         OrderId: {
-          in: "path",
-          name: "id",
+          in: 'path',
+          name: 'id',
           required: true,
           schema: {
-            type: "string",
-            format: "uuid",
+            type: 'string',
+            format: 'uuid'
           },
-          example: "clx9876543210",
+          example: 'clx9876543210'
         },
         MediaId: {
-          in: "path",
-          name: "mediaId",
+          in: 'path',
+          name: 'mediaId',
           required: true,
           schema: {
-            type: "string",
-            format: "uuid",
+            type: 'string',
+            format: 'uuid'
           },
-          example: "clm9876543210",
+          example: 'clm9876543210'
         },
         PageParam: {
-          in: "query",
-          name: "page",
+          in: 'query',
+          name: 'page',
           schema: {
-            type: "integer",
+            type: 'integer',
             minimum: 1,
-            default: 1,
-          },
+            default: 1
+          }
         },
         LimitParam: {
-          in: "query",
-          name: "limit",
+          in: 'query',
+          name: 'limit',
           schema: {
-            type: "integer",
+            type: 'integer',
             minimum: 1,
             maximum: 100,
-            default: 10,
-          },
+            default: 10
+          }
         },
         StatusFilter: {
-          in: "query",
-          name: "status",
+          in: 'query',
+          name: 'status',
           schema: {
-            type: "string",
-            enum: [
-              "PENDING",
-              "IN_PROGRESS",
-              "COMPLETED",
-              "CANCELLED",
-              "ON_HOLD",
-            ],
-          },
+            type: 'string',
+            enum: ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'ON_HOLD']
+          }
         },
         SearchParam: {
-          in: "query",
-          name: "search",
+          in: 'query',
+          name: 'search',
           schema: {
-            type: "string",
+            type: 'string',
             minLength: 1,
-            maxLength: 100,
-          },
-        },
-      },
+            maxLength: 100
+          }
+        }
+      }
     },
     security: [
       {
-        bearerAuth: [],
-      },
+        bearerAuth: []
+      }
     ],
     tags: [
       {
-        name: "Authentication",
-        description: "User authentication and profile management endpoints.",
+        name: 'Authentication',
+        description: 'User authentication and profile management endpoints.'
       },
       {
-        name: "Orders",
-        description: "Complete order management system with CRUD operations.",
+        name: 'Orders',
+        description: 'Complete order management system with CRUD operations.'
       },
       {
-        name: "Customer Media",
-        description: "Customer media file upload and management system.",
+        name: 'Customer Media',
+        description: 'Customer media file upload and management system.'
       },
       {
-        name: "Admin",
-        description: "Admin management endpoints.",
+        name: 'Admin',
+        description: 'Admin management endpoints.'
       },
       {
-        name: "Admin Media Files",
-        description: "Admin/Staff media file management system.",
+        name: 'Admin Media Files',
+        description: 'Admin/Staff media file management system.'
       },
       {
-        name: "Users",
-        description:
-          "Update user role by Admin and customer dashboard endpoints.",
+        name: 'Users',
+        description: 'Update user role by Admin and customer dashboard endpoints.'
       },
-    ],
+    ]
   },
   apis: [
-    path.join(__dirname, "../src/routes/*.js"),
-    path.join(__dirname, "../src/docs/*.js"),
+    './routes/*.js',
+    './src/routes/*.js',
+    './src/docs/*.js'
   ],
 };
 
